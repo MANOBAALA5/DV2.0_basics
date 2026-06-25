@@ -1,0 +1,825 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Advanced Data Vault 2.0 — temporal modeling, anchor modeling comparison, MDM via Same-As Links, and separating hard from soft business rules.">
+<title>Module 09: Advanced Data Vault 2.0 | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html" class="active">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">09</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--coral);border-color:rgba(248,113,113,0.25);background:var(--coral-dim)">
+      Advanced &nbsp;&middot;&nbsp; Module 09 of 14
+    </span>
+    <h1>Advanced<br><em style="color:var(--gold)">Data Vault 2.0</em></h1>
+    <p class="mod-hero-desc">
+      Push beyond standard DV2 patterns into advanced territory: temporal modeling, graph database mapping, MDM via Same-As Links, and the nuanced art of separating hard from soft business rules.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~60 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Advanced</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;08</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: ANCHOR MODELING COMPARISON
+       ============================================================ -->
+  <article class="concept" data-topic="anchor-modeling" id="anchor-modeling">
+    <p class="concept-num">Concept 01</p>
+    <h2>Anchor Modeling Comparison</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Anchor Modeling is another enterprise data modeling approach that, like Data Vault, separates entity identity from descriptive attributes and tracks full history. The key difference: in Anchor Modeling, each attribute gets its <strong>OWN table</strong> &mdash; instead of grouping related attributes into satellites. This gives maximum flexibility but creates an enormous number of tables. Imagine a customer with 20 attributes: Data Vault might use 3&ndash;4 satellites; Anchor Modeling would use <em>20 separate tables</em>.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Structure at a Glance</h3>
+      <p>Both methodologies share the same core philosophy: separate <em>identity</em> from <em>description</em>, track every historical change, and never delete data. The divergence is in the granularity of storage.</p>
+      <ul>
+        <li><strong>Data Vault 2.0</strong> groups related attributes into satellites split by rate of change and source system. One satellite = one rate of change + one source.</li>
+        <li><strong>Anchor Modeling</strong> takes this to the extreme: each individual attribute (first name, last name, email address) lives in its own table &mdash; called an &ldquo;Attribute&rdquo; table. Relationships between Anchors are called &ldquo;Ties&rdquo; (analogous to Links).</li>
+      </ul>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Data Vault 2.0</th>
+          <th>Anchor Modeling</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Identity Store</strong></td>
+          <td>Hub (business key only)</td>
+          <td>Anchor (identity only)</td>
+        </tr>
+        <tr>
+          <td><strong>Attributes</strong></td>
+          <td>Satellites (groups of related columns)</td>
+          <td>One table per attribute</td>
+        </tr>
+        <tr>
+          <td><strong>Relationships</strong></td>
+          <td style="color:var(--gold)">Links</td>
+          <td>Ties</td>
+        </tr>
+        <tr>
+          <td><strong>History</strong></td>
+          <td>Satellite row per change</td>
+          <td>Attribute table row per change</td>
+        </tr>
+        <tr>
+          <td><strong>Number of Tables</strong></td>
+          <td style="color:var(--green)">&#10003; Moderate</td>
+          <td style="color:var(--coral)">Very high</td>
+        </tr>
+        <tr>
+          <td><strong>Query Complexity</strong></td>
+          <td style="color:var(--green)">Medium</td>
+          <td style="color:var(--coral)">High (many joins required)</td>
+        </tr>
+        <tr>
+          <td><strong>Schema Flexibility</strong></td>
+          <td>Add new satellites</td>
+          <td>Add new attribute tables</td>
+        </tr>
+        <tr>
+          <td><strong>Tool Support</strong></td>
+          <td style="color:var(--green)">&#10003; Strong (dbt, WhereScape)</td>
+          <td style="color:var(--amber)">Limited</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="diagram" aria-label="Anchor Modeling vs Data Vault structural comparison">
+      <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Side-by-side: DV hub with grouped satellites vs Anchor with per-attribute tables">
+        <!-- Panel backgrounds -->
+        <rect x="0" y="0" width="340" height="300" rx="12" fill="rgba(34,211,200,0.04)" stroke="rgba(34,211,200,0.18)" stroke-width="1"/>
+        <rect x="380" y="0" width="340" height="300" rx="12" fill="rgba(248,113,113,0.04)" stroke="rgba(248,113,113,0.18)" stroke-width="1"/>
+
+        <!-- Panel labels -->
+        <text x="170" y="24" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(34,211,200,0.75)" letter-spacing="2">DATA VAULT 2.0</text>
+        <text x="550" y="24" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(248,113,113,0.75)" letter-spacing="2">ANCHOR MODELING</text>
+
+        <!-- DV: Hub -->
+        <circle cx="170" cy="152" r="38" fill="rgba(34,211,200,0.1)" stroke="#22d3c8" stroke-width="1.5"/>
+        <text x="170" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8" font-weight="600">HUB</text>
+        <text x="170" y="162" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.55)">CUSTOMER</text>
+
+        <!-- DV: Sat 1 top-left -->
+        <rect x="28" y="68" width="92" height="36" rx="6" fill="rgba(167,139,250,0.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="74" y="83" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#a78bfa" font-weight="600">SAT_DEMOGRAPHICS</text>
+        <text x="74" y="97" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(167,139,250,0.55)">name &middot; email &middot; dob</text>
+        <line x1="120" y1="86" x2="132" y2="130" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3" opacity="0.45"/>
+
+        <!-- DV: Sat 2 bottom-left -->
+        <rect x="28" y="190" width="92" height="36" rx="6" fill="rgba(167,139,250,0.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="74" y="205" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#a78bfa" font-weight="600">SAT_FINANCIALS</text>
+        <text x="74" y="219" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(167,139,250,0.55)">balance &middot; tier &middot; limit</text>
+        <line x1="120" y1="208" x2="132" y2="174" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3" opacity="0.45"/>
+
+        <!-- DV: Sat 3 top-right -->
+        <rect x="220" y="68" width="92" height="36" rx="6" fill="rgba(167,139,250,0.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="266" y="83" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#a78bfa" font-weight="600">SAT_ADDRESS</text>
+        <text x="266" y="97" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(167,139,250,0.55)">street &middot; city &middot; country</text>
+        <line x1="220" y1="86" x2="208" y2="130" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3" opacity="0.45"/>
+
+        <!-- DV: Sat 4 bottom-right -->
+        <rect x="220" y="190" width="92" height="36" rx="6" fill="rgba(167,139,250,0.1)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="266" y="205" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#a78bfa" font-weight="600">SAT_STATUS</text>
+        <text x="266" y="219" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(167,139,250,0.55)">status &middot; segment</text>
+        <line x1="220" y1="208" x2="208" y2="174" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3" opacity="0.45"/>
+
+        <text x="170" y="274" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">4 satellites &mdash; grouped attributes</text>
+
+        <!-- Anchor: central circle -->
+        <circle cx="550" cy="152" r="32" fill="rgba(248,113,113,0.1)" stroke="#f87171" stroke-width="1.5"/>
+        <text x="550" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#f87171" font-weight="600">ANCHOR</text>
+        <text x="550" y="162" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(248,113,113,0.55)">CUSTOMER</text>
+
+        <!-- Anchor attribute tables (radial) -->
+        <rect x="394" y="46" width="68" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="428" y="61" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">FIRST_NAME</text>
+        <line x1="462" y1="57" x2="522" y2="128" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="516" y="34" width="68" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="550" y="49" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">LAST_NAME</text>
+        <line x1="550" y1="56" x2="550" y2="120" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="638" y="46" width="64" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="670" y="61" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">EMAIL</text>
+        <line x1="638" y1="57" x2="580" y2="128" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="650" y="141" width="64" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="682" y="156" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">PHONE</text>
+        <line x1="650" y1="152" x2="582" y2="152" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="638" y="228" width="64" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="670" y="243" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">DOB</text>
+        <line x1="638" y1="239" x2="580" y2="176" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="516" y="240" width="68" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="550" y="255" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">COUNTRY</text>
+        <line x1="550" y1="240" x2="550" y2="184" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="394" y="228" width="68" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="428" y="243" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">STATUS</text>
+        <line x1="462" y1="239" x2="522" y2="176" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <rect x="386" y="141" width="64" height="22" rx="4" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.38)" stroke-width="1"/>
+        <text x="418" y="156" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(251,191,36,0.8)">BALANCE</text>
+        <line x1="450" y1="152" x2="518" y2="152" stroke="rgba(251,191,36,0.28)" stroke-width="1"/>
+
+        <text x="550" y="274" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">8 attribute tables &mdash; one per column</text>
+
+        <!-- VS divider -->
+        <text x="360" y="158" text-anchor="middle" font-family="Syne,sans-serif" font-size="18" fill="rgba(255,255,255,0.12)" font-weight="800">VS</text>
+      </svg>
+    </div>
+
+    <div class="detail">
+      <h3>When Anchor Modeling Might Be Preferred</h3>
+      <p>Anchor Modeling has genuine advantages in specific edge cases:</p>
+      <ul>
+        <li>When the attribute schema is <strong>extremely volatile</strong> and individual attributes change at very different, unpredictable rates</li>
+        <li>When you need maximum <strong>attribute-level granularity</strong> with separate versioning per column, not per group</li>
+        <li>When the schema evolves so rapidly that even defining satellite groupings is premature</li>
+      </ul>
+      <p>In practice, Data Vault 2.0&rsquo;s <strong>satellite splitting by rate of change</strong> achieves most of Anchor Modeling&rsquo;s benefits with significantly lower table count, simpler queries, and a vastly better tool ecosystem.</p>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Architect insight:</strong> Most real-world evaluations that considered Anchor Modeling ultimately chose Data Vault because of tooling maturity (dbt, WhereScape, Datavault4dbt) and query simplicity. DV2 satellite splitting &mdash; one satellite per rate-of-change group per source &mdash; captures 95% of Anchor Modeling&rsquo;s flexibility with a fraction of the table count and join complexity.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: BI-TEMPORAL MODELING
+       ============================================================ -->
+  <article class="concept" data-topic="bi-temporal" id="bi-temporal">
+    <p class="concept-num">Concept 02</p>
+    <h2>Temporal Data Vault &mdash; Bi-Temporal Modeling</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Most data has <strong>two timestamps</strong>: when something happened in the real world (&ldquo;valid time&rdquo; or &ldquo;business date&rdquo;) and when we recorded it in our system (&ldquo;transaction time&rdquo; or &ldquo;load date&rdquo;). Normal Data Vault only tracks <em>transaction time</em> automatically. Bi-temporal modeling tracks <strong>BOTH</strong>.
+      </p>
+      <p style="margin-top:0.75rem">
+        This lets you answer two distinct questions: &ldquo;What did we <strong>BELIEVE</strong> to be true on January 1?&rdquo; and &ldquo;What do we <strong>NOW KNOW</strong> was actually true on January 1?&rdquo; &mdash; two completely different questions with potentially very different answers.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Two Independent Time Axes</h3>
+      <p><strong>Transaction Time (TT)</strong> &mdash; when data was stored in the system. In Data Vault this is the <code>LOAD_DATE</code> column. It is system-controlled and <em>immutable</em>. This is what standard Data Vault already provides automatically.</p>
+      <p><strong>Valid Time (VT)</strong> &mdash; when the fact was true in the real world. Added to the satellite payload as <code>VALID_FROM</code> and <code>VALID_TO</code> columns. Provided by the source system or business process; it <em>can</em> predate the Load Date when data arrives late.</p>
+    </div>
+
+    <div class="diagram" aria-label="Bi-temporal time grid: Transaction Time vs Valid Time">
+      <svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="btgrid" width="56" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 56 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          </pattern>
+          <marker id="bt-arrow" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto">
+            <polygon points="0 0, 7 3, 0 6" fill="rgba(232,184,75,0.55)"/>
+          </marker>
+        </defs>
+        <rect x="64" y="20" width="552" height="200" fill="url(#btgrid)"/>
+        <rect x="64" y="20" width="552" height="200" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" rx="4"/>
+
+        <!-- Axis labels -->
+        <text x="340" y="268" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(34,211,200,0.75)" letter-spacing="1">TRANSACTION TIME (LOAD_DATE)  &rarr;</text>
+        <text x="16" y="120" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(232,184,75,0.75)" letter-spacing="1" transform="rotate(-90,16,120)">VALID TIME (BUSINESS DATE)  &rarr;</text>
+
+        <!-- X ticks -->
+        <text x="120" y="237" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Jan 1</text>
+        <text x="232" y="237" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Feb 1</text>
+        <text x="344" y="237" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Mar 1</text>
+        <text x="456" y="237" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Apr 1</text>
+        <text x="568" y="237" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">May 1</text>
+        <line x1="120" y1="220" x2="120" y2="224" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="232" y1="220" x2="232" y2="224" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="344" y1="220" x2="344" y2="224" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="456" y1="220" x2="456" y2="224" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="568" y1="220" x2="568" y2="224" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+
+        <!-- Y ticks -->
+        <text x="54" y="214" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Jan 1</text>
+        <text x="54" y="164" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Feb 1</text>
+        <text x="54" y="114" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Mar 1</text>
+        <text x="54" y="64" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.28)">Apr 1</text>
+        <line x1="64" y1="210" x2="60" y2="210" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="64" y1="160" x2="60" y2="160" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="64" y1="110" x2="60" y2="110" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <line x1="64" y1="60" x2="60" y2="60" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+
+        <!-- Zone: real-time data (TT=Jan1, VT=Jan1) -->
+        <rect x="65" y="161" width="114" height="48" fill="rgba(34,211,200,0.13)" stroke="rgba(34,211,200,0.38)" stroke-width="1"/>
+        <text x="122" y="182" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#22d3c8" font-weight="600">Real-time snapshot</text>
+        <text x="122" y="196" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="rgba(34,211,200,0.65)">TT = VT = Jan 1</text>
+
+        <!-- Zone: late-arriving correction -->
+        <rect x="233" y="61" width="168" height="98" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.3)" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="317" y="107" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#e8b84b" font-weight="600">Late-arriving data</text>
+        <text x="317" y="121" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="rgba(232,184,75,0.65)">Loaded Feb, true in Jan</text>
+
+        <!-- Arrow: correction -->
+        <path d="M 190 186 Q 270 140 310 125" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" fill="none" marker-end="url(#bt-arrow)"/>
+
+        <!-- Single event dot -->
+        <circle cx="344" cy="110" r="5" fill="#f87171" opacity="0.85"/>
+        <text x="353" y="106" font-family="DM Sans,sans-serif" font-size="8" fill="#f87171">Loaded Mar 1</text>
+        <text x="353" y="118" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(248,113,113,0.65)">True since Jan 15</text>
+
+        <!-- Legend -->
+        <rect x="460" y="58" width="12" height="12" rx="2" fill="rgba(34,211,200,0.25)" stroke="rgba(34,211,200,0.5)" stroke-width="1"/>
+        <text x="478" y="69" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.45)">Real-time data</text>
+        <rect x="460" y="80" width="12" height="12" rx="2" fill="rgba(232,184,75,0.12)" stroke="rgba(232,184,75,0.45)" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="478" y="91" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.45)">Backdated correction</text>
+        <circle cx="466" cy="109" r="4" fill="#f87171" opacity="0.85"/>
+        <text x="478" y="113" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.45)">Individual event</text>
+      </svg>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Bi-Temporal Satellite: Account Balance</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Bi-temporal satellite: two independent time dimensions</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_ACCOUNT_BALANCE_BITEMPORAL</span> (
+    <span class="hub">HUB_ACCOUNT_HK</span>   <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Transaction Time: when loaded into Data Vault (immutable, system-set)</span>
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP</span>     <span class="kw">NULL</span>,
+    <span class="cm">-- Valid Time: when the fact was true in the real world (business-provided)</span>
+    VALID_FROM       <span class="typ">DATE</span>          <span class="kw">NOT NULL</span>,  <span class="cm">-- business effective date</span>
+    VALID_TO         <span class="typ">DATE</span>          <span class="kw">NULL</span>,      <span class="cm">-- NULL = currently valid</span>
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Payload</span>
+    BALANCE          <span class="typ">DECIMAL(18,4)</span>,
+    BALANCE_TYPE     <span class="typ">VARCHAR(20)</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_ab_bt <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_ACCOUNT_HK</span>, <span class="str">LOAD_DATE</span>)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Bi-Temporal Query: &ldquo;What did we believe on Jan 1?&rdquo;</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Q: Balance as of Jan 1, 2023 AS WE UNDERSTOOD IT on that date</span>
+<span class="cm">--    Both Valid Time AND Transaction Time anchored to '2023-01-01'</span>
+<span class="kw">SELECT</span>
+    sat.BALANCE,
+    sat.BALANCE_TYPE,
+    sat.VALID_FROM,
+    sat.LOAD_DATE   <span class="kw">AS</span> WHEN_RECORDED
+<span class="kw">FROM</span> <span class="sat">SAT_ACCOUNT_BALANCE_BITEMPORAL</span> sat
+<span class="kw">WHERE</span> sat.HUB_ACCOUNT_HK <span class="op">=</span> <span class="str">'abc123...'</span>
+  <span class="cm">-- Valid Time filter: the fact was true on Jan 1</span>
+  <span class="kw">AND</span> sat.VALID_FROM     <span class="op">&lt;=</span> <span class="str">'2023-01-01'</span>
+  <span class="kw">AND</span> (sat.VALID_TO      <span class="kw">IS NULL</span> <span class="kw">OR</span> sat.VALID_TO      <span class="op">&gt;</span> <span class="str">'2023-01-01'</span>)
+  <span class="cm">-- Transaction Time filter: we had loaded it by Jan 1</span>
+  <span class="kw">AND</span> sat.LOAD_DATE      <span class="op">&lt;=</span> <span class="str">'2023-01-01'</span>
+  <span class="kw">AND</span> (sat.LOAD_END_DATE <span class="kw">IS NULL</span> <span class="kw">OR</span> sat.LOAD_END_DATE <span class="op">&gt;</span> <span class="str">'2023-01-01'</span>);
+
+<span class="cm">-- Swap LOAD_DATE filter to CURRENT_TIMESTAMP() to ask:</span>
+<span class="cm">-- "What do we NOW KNOW was true on Jan 1?" (late corrections included)</span></pre>
+    </div>
+
+    <div class="detail">
+      <h3>Real-World Use Cases</h3>
+      <ul>
+        <li><strong>Late-arriving banking data</strong> &mdash; A payment made Dec 31 arrives Jan 3. VALID_FROM = Dec 31, LOAD_DATE = Jan 3. Both dates are preserved independently.</li>
+        <li><strong>Regulatory reporting</strong> &mdash; Prove what you reported to a regulator on a specific date versus what actually happened. These frequently differ due to subsequent corrections.</li>
+        <li><strong>Insurance backdating</strong> &mdash; A policy approved Feb 1 may be backdated to Jan 1. Bi-temporal handles this without compromising data integrity.</li>
+        <li><strong>Compliance audits</strong> &mdash; Reconstruct the exact system view any process had at any historical point, independent of subsequent corrections or late arrivals.</li>
+      </ul>
+    </div>
+
+    <div class="tip">
+      <p><strong>When to add bi-temporal:</strong> Not every project needs it. Add <code>VALID_FROM</code>/<code>VALID_TO</code> to satellite payloads only when business or regulatory requirements explicitly demand &ldquo;as-of&rdquo; analysis across both time dimensions. The complexity cost is real &mdash; only introduce it when the business case is unambiguous.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: SOFT BUSINESS RULES
+       ============================================================ -->
+  <article class="concept" data-topic="soft-rules" id="soft-rules">
+    <p class="concept-num">Concept 03</p>
+    <h2>Soft Business Rules &mdash; The Right Way</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        &ldquo;Soft&rdquo; business rules are <strong>interpretive transformations</strong> &mdash; code lookups, derivations, classifications &mdash; that add business meaning but <em>could change over time</em>. The cardinal sin in Data Vault is putting soft rules in the Raw Vault. If the rule changes, you&rsquo;ve permanently altered your audit trail. Soft rules belong in the <strong>Business Vault or Information Mart</strong>, where they can evolve without touching raw history.
+      </p>
+      <p style="margin-top:0.75rem">
+        Think of the Raw Vault as a <em>court reporter</em> who writes down exactly what was said. The Business Vault is the <em>analyst</em> who interprets what it means. Never let the court reporter make interpretive choices.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Rule Taxonomy</h3>
+      <p>Every transformation you write can be classified. That classification determines which layer it belongs in:</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Rule Type</th>
+          <th>Layer</th>
+          <th>Examples</th>
+          <th>Practical Test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--green)"><strong>Hard Rules</strong></td>
+          <td>Staging only</td>
+          <td>TRIM() / UPPER() on BK; filter NULL BKs; hash key computation; split composite keys; data type casting</td>
+          <td>Business analyst recognizes output as the same data the source sent</td>
+        </tr>
+        <tr>
+          <td style="color:var(--coral)"><strong>Soft Rules</strong></td>
+          <td>Business Vault or Info Mart</td>
+          <td>Code table lookups (&ldquo;US&rdquo; &rarr; &ldquo;United States&rdquo;); risk tier classification; derived aggregates; segment assignment; currency conversion</td>
+          <td>Output requires interpretation or business judgment to derive</td>
+        </tr>
+        <tr>
+          <td style="color:var(--amber)"><strong>Gray Area</strong></td>
+          <td>Depends</td>
+          <td>Filtering NULL BK = hard (structural). Filtering &ldquo;invalid&rdquo; business records = soft (store with error satellite)</td>
+          <td>Would a business rule change alter the outcome? If yes &rarr; soft</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; BAD: Soft Rule in Staging (DO NOT DO THIS)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ✗ BAD: soft business rule baked into staging / load layer</span>
+<span class="cm">--   If STATUS_CODE meanings change, raw history is permanently corrupted</span>
+<span class="kw">SELECT</span>
+    src.CUSTOMER_ID,
+    <span class="kw">CASE</span>
+        <span class="kw">WHEN</span> src.STATUS_CODE <span class="op">=</span> <span class="str">'A'</span> <span class="kw">THEN</span> <span class="str">'Active'</span>
+        <span class="kw">WHEN</span> src.STATUS_CODE <span class="op">=</span> <span class="str">'I'</span> <span class="kw">THEN</span> <span class="str">'Inactive'</span>
+        <span class="kw">ELSE</span> <span class="str">'Unknown'</span>
+    <span class="kw">END</span> <span class="kw">AS</span> STATUS_DESCRIPTION   <span class="cm">-- soft rule in the WRONG layer!</span>
+<span class="kw">FROM</span> raw_source.customers src;</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; GOOD: Soft Rule in Business Vault Computed Satellite</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ✓ GOOD: soft rule lives in a Business Vault computed satellite (BSAT)</span>
+<span class="cm">--   Raw Vault keeps STATUS_CODE='A' unchanged forever</span>
+<span class="cm">--   BSAT re-derives the label whenever the rule or reference table changes</span>
+<span class="kw">INSERT INTO</span> <span class="sat">BSAT_CUSTOMER_STATUS_RESOLVED</span>
+<span class="kw">SELECT</span>
+    sat.HUB_CUSTOMER_HK,
+    <span class="fn">CURRENT_TIMESTAMP</span>()                                        <span class="kw">AS</span> LOAD_DATE,
+    <span class="fn">MD5</span>(sat.STATUS_CODE <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span> ref.STATUS_DESCRIPTION)    <span class="kw">AS</span> HASH_DIFF,
+    <span class="str">'BV.STATUS_RESOLUTION_RULE_V3'</span>                             <span class="kw">AS</span> RECORD_SOURCE,
+    sat.STATUS_CODE,
+    ref.STATUS_DESCRIPTION,    <span class="cm">-- looked up from BV reference table</span>
+    ref.IS_ACTIVE_FLAG
+<span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_STATUS</span> sat
+<span class="kw">JOIN</span> <span class="hub">BREF_STATUS_CODES</span> ref
+    <span class="kw">ON</span> ref.STATUS_CODE <span class="op">=</span> sat.STATUS_CODE
+<span class="kw">WHERE</span> sat.LOAD_END_DATE <span class="kw">IS NULL</span>;   <span class="cm">-- current satellite records only</span>
+
+<span class="cm">-- When mapping changes (e.g., 'A' now means 'Archived'):</span>
+<span class="cm">--   1. Update BREF_STATUS_CODES</span>
+<span class="cm">--   2. Re-run the BSAT load — new rows reflect new rule</span>
+<span class="cm">--   3. Raw Vault untouched — complete audit trail intact</span></pre>
+    </div>
+
+    <div class="bpm-grid">
+      <div class="bp-box">
+        <h4>&#10003; Hard Rules (Staging Layer)</h4>
+        <ul>
+          <li>TRIM() and UPPER() on business key columns</li>
+          <li>Filter rows where business key IS NULL</li>
+          <li>Compute hash keys (MD5/SHA-256 of BK)</li>
+          <li>Compute HashDiff (MD5 of all payload cols)</li>
+          <li>Split composite keys into components</li>
+          <li>Cast data types to vault standard types</li>
+          <li>Add LOAD_DATE and RECORD_SOURCE metadata</li>
+        </ul>
+      </div>
+      <div class="mistake-box">
+        <h4>&#10007; Soft Rules (NEVER in Raw Vault)</h4>
+        <ul>
+          <li>Code / lookup table joins (&ldquo;A&rdquo; &rarr; &ldquo;Active&rdquo;)</li>
+          <li>Risk tier or customer segment derivation</li>
+          <li>Aggregate calculations (SUM, COUNT, AVG)</li>
+          <li>Currency or unit of measure conversion</li>
+          <li>Fiscal calendar / quarter derivation</li>
+          <li>Record filtering for &ldquo;data quality&rdquo; reasons</li>
+          <li>Any CASE WHEN that applies business logic</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>The dangerous gray area &mdash; record filtering:</strong> Filtering rows with a NULL business key is a hard rule (structural requirement for vault integrity). Filtering rows because they are &ldquo;invalid&rdquo; by some business definition is a <strong>soft rule</strong>. Store those records in the Raw Vault (with a companion error satellite flagging the issue) and let downstream business rules decide. Suppressing records at the Raw Vault layer destroys auditability and prevents future recovery if the &ldquo;invalid&rdquo; definition later changes.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: DATA VAULT & MDM
+       ============================================================ -->
+  <article class="concept" data-topic="mdm" id="mdm">
+    <p class="concept-num">Concept 04</p>
+    <h2>Data Vault &amp; Master Data Management</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Master Data Management (MDM) is about finding the <strong>&ldquo;golden record&rdquo;</strong> when multiple systems disagree about the same customer, product, or supplier. Your CRM calls them &ldquo;CRM-1001&rdquo;, your ERP calls them &ldquo;ERP-XYZ-99&rdquo; &mdash; same person, different identities. Data Vault doesn&rsquo;t replace MDM tools, but provides the perfect foundation: the <em>Raw Vault preserves all source identities</em>, and <strong>Same-As Links</strong> store the matching decisions made by MDM processes &mdash; without destroying any original records.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>DV + MDM Integration Architecture</h3>
+      <ol>
+        <li><strong>Raw Vault</strong> &mdash; Each source system&rsquo;s entities load into Hubs with their own business keys. No merging at this layer. CRM&rsquo;s &ldquo;CRM-1001&rdquo; and ERP&rsquo;s &ldquo;ERP-XYZ-99&rdquo; coexist as separate Hub rows.</li>
+        <li><strong>MDM Process (external or embedded)</strong> &mdash; Matching algorithms (probabilistic, deterministic, or manual review) identify which records represent the same real-world entity and produce match decisions.</li>
+        <li><strong>Same-As Links &mdash; Business Vault</strong> &mdash; Each MDM decision is stored as a SAL row: DRIVER (canonical/golden identity) + DEPENDENT (matched alternative). A satellite on the SAL tracks confidence score, match algorithm, and effective dates.</li>
+        <li><strong>Business Vault Views</strong> &mdash; Apply the SAL mapping to resolve all source identities to the canonical key, producing a unified &ldquo;golden customer&rdquo; view.</li>
+        <li><strong>Information Marts</strong> &mdash; Consume the golden view for reporting and analytics, unaware of the underlying source fragmentation.</li>
+      </ol>
+    </div>
+
+    <div class="diagram" aria-label="MDM and Data Vault integration architecture flow diagram">
+      <svg viewBox="0 0 680 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a1" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="rgba(34,211,200,0.6)"/></marker>
+          <marker id="a2" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="rgba(251,191,36,0.5)"/></marker>
+          <marker id="a3" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="rgba(232,184,75,0.6)"/></marker>
+          <marker id="a4" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="rgba(74,222,128,0.6)"/></marker>
+          <marker id="a5" markerWidth="7" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="rgba(167,139,250,0.6)"/></marker>
+        </defs>
+
+        <!-- Layer separators -->
+        <line x1="30" y1="82" x2="670" y2="82" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="30" y1="168" x2="670" y2="168" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="30" y1="252" x2="670" y2="252" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- Layer labels -->
+        <text x="12" y="50" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(255,255,255,0.2)" transform="rotate(-90,12,50)">SOURCE</text>
+        <text x="12" y="134" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(255,255,255,0.2)" transform="rotate(-90,12,134)">RAW VAULT</text>
+        <text x="12" y="218" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(255,255,255,0.2)" transform="rotate(-90,12,218)">BIZ VAULT</text>
+        <text x="12" y="296" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(255,255,255,0.2)" transform="rotate(-90,12,296)">MART</text>
+
+        <!-- Row 1: Source systems -->
+        <rect x="52" y="22" width="100" height="44" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.3)" stroke-width="1"/>
+        <text x="102" y="40" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8" font-weight="600">CRM</text>
+        <text x="102" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(34,211,200,0.5)">CRM-1001</text>
+
+        <rect x="290" y="22" width="100" height="44" rx="8" fill="rgba(232,184,75,0.07)" stroke="rgba(232,184,75,0.3)" stroke-width="1"/>
+        <text x="340" y="40" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#e8b84b" font-weight="600">ERP</text>
+        <text x="340" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(232,184,75,0.5)">ERP-XYZ-99</text>
+
+        <rect x="528" y="22" width="100" height="44" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+        <text x="578" y="40" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#a78bfa" font-weight="600">WEB</text>
+        <text x="578" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(167,139,250,0.5)">USR-44821</text>
+
+        <!-- Arrows: Source → Raw Vault hubs -->
+        <line x1="102" y1="66" x2="102" y2="100" stroke="rgba(34,211,200,0.4)" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="340" y1="66" x2="340" y2="100" stroke="rgba(34,211,200,0.4)" stroke-width="1.5" marker-end="url(#a1)"/>
+        <line x1="578" y1="66" x2="578" y2="100" stroke="rgba(34,211,200,0.4)" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <!-- Row 2: Raw Vault hubs -->
+        <rect x="52" y="100" width="100" height="44" rx="8" fill="rgba(34,211,200,0.05)" stroke="rgba(34,211,200,0.22)" stroke-width="1"/>
+        <text x="102" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(34,211,200,0.7)">HUB_CUSTOMER</text>
+        <text x="102" y="133" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(34,211,200,0.4)">BK: CRM-1001</text>
+
+        <rect x="290" y="100" width="100" height="44" rx="8" fill="rgba(34,211,200,0.05)" stroke="rgba(34,211,200,0.22)" stroke-width="1"/>
+        <text x="340" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(34,211,200,0.7)">HUB_CUSTOMER</text>
+        <text x="340" y="133" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(34,211,200,0.4)">BK: ERP-XYZ-99</text>
+
+        <rect x="528" y="100" width="100" height="44" rx="8" fill="rgba(34,211,200,0.05)" stroke="rgba(34,211,200,0.22)" stroke-width="1"/>
+        <text x="578" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="rgba(34,211,200,0.7)">HUB_CUSTOMER</text>
+        <text x="578" y="133" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="rgba(34,211,200,0.4)">BK: USR-44821</text>
+
+        <!-- Arrows: Raw Vault → MDM -->
+        <path d="M 102 144 Q 102 168 255 195" stroke="rgba(251,191,36,0.3)" stroke-width="1.5" fill="none" marker-end="url(#a2)"/>
+        <line x1="340" y1="144" x2="340" y2="182" stroke="rgba(251,191,36,0.3)" stroke-width="1.5" marker-end="url(#a2)"/>
+        <path d="M 578 144 Q 578 168 425 195" stroke="rgba(251,191,36,0.3)" stroke-width="1.5" fill="none" marker-end="url(#a2)"/>
+
+        <!-- Row 3: Biz Vault (MDM + SAL + Golden View) -->
+        <!-- MDM Process -->
+        <rect x="248" y="182" width="184" height="44" rx="8" fill="rgba(251,191,36,0.07)" stroke="rgba(251,191,36,0.32)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="340" y="200" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#fbbf24" font-weight="600">MDM MATCH ENGINE</text>
+        <text x="340" y="216" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(251,191,36,0.6)">probabilistic / deterministic</text>
+
+        <!-- SAL box -->
+        <rect x="52" y="182" width="128" height="44" rx="8" fill="rgba(232,184,75,0.07)" stroke="rgba(232,184,75,0.28)" stroke-width="1"/>
+        <text x="116" y="200" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#e8b84b" font-weight="600">SAL_CUSTOMER</text>
+        <text x="116" y="216" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(232,184,75,0.6)">DRIVER &harr; DEPENDENT</text>
+
+        <!-- Golden view -->
+        <rect x="500" y="182" width="140" height="44" rx="8" fill="rgba(74,222,128,0.07)" stroke="rgba(74,222,128,0.28)" stroke-width="1"/>
+        <text x="570" y="200" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#4ade80" font-weight="600">VW_GOLDEN_CUST</text>
+        <text x="570" y="216" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(74,222,128,0.6)">resolved identity view</text>
+
+        <!-- Arrow: MDM → SAL -->
+        <line x1="248" y1="204" x2="180" y2="204" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" marker-end="url(#a3)"/>
+
+        <!-- Arrow: SAL → Golden view (arc above) -->
+        <path d="M 180 190 Q 340 158 500 190" stroke="rgba(74,222,128,0.4)" stroke-width="1.5" fill="none" marker-end="url(#a4)"/>
+
+        <!-- Arrow: Golden view → Info Mart -->
+        <path d="M 570 226 Q 570 250 430 268" stroke="rgba(167,139,250,0.45)" stroke-width="1.5" fill="none" marker-end="url(#a5)"/>
+
+        <!-- Row 4: Info Mart -->
+        <rect x="248" y="268" width="184" height="44" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.28)" stroke-width="1"/>
+        <text x="340" y="286" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#a78bfa" font-weight="600">INFORMATION MART</text>
+        <text x="340" y="302" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(167,139,250,0.6)">single golden customer view</text>
+      </svg>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Same-As Link: Storing MDM Match Decisions</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAL_CUSTOMER: stores MDM match decisions in the Business Vault</span>
+<span class="cm">-- Decision: "CRM-1001" IS THE SAME ENTITY AS "ERP-XYZ-99"</span>
+<span class="kw">INSERT INTO</span> <span class="lnk">SAL_CUSTOMER</span> (
+    SAL_CUSTOMER_HK,
+    DRIVER_HUB_CUSTOMER_HK,
+    DEPENDENT_HUB_CUSTOMER_HK,
+    LOAD_DATE,
+    RECORD_SOURCE
+)
+<span class="kw">VALUES</span> (
+    <span class="fn">MD5</span>(<span class="str">'CRM-1001'</span> <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span> <span class="str">'ERP-XYZ-99'</span>),
+    <span class="fn">MD5</span>(<span class="str">'CRM-1001'</span>),     <span class="cm">-- DRIVER: canonical / golden identity</span>
+    <span class="fn">MD5</span>(<span class="str">'ERP-XYZ-99'</span>),   <span class="cm">-- DEPENDENT: matched alternative key</span>
+    <span class="fn">CURRENT_TIMESTAMP</span>(),
+    <span class="str">'MDM.MASTER_DATA_HUB.MATCH_PROCESS_V2'</span>
+);
+
+<span class="cm">-- A satellite on the SAL stores match metadata:</span>
+<span class="cm">-- confidence score, algorithm, manual_review_flag, effective dates</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Business Vault View: Golden Customer Resolution</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Business Vault view: resolve SAL to produce a unified "golden" key</span>
+<span class="cm">-- COALESCE: if this hub key is a DEPENDENT in the SAL, resolve to its DRIVER</span>
+<span class="kw">CREATE VIEW</span> <span class="fn">VW_BV_CUSTOMER_GOLDEN</span> <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="fn">COALESCE</span>(
+        sal.DRIVER_HUB_CUSTOMER_HK,
+        h.HUB_CUSTOMER_HK
+    )                      <span class="kw">AS</span> GOLDEN_HK,    <span class="cm">-- canonical identity</span>
+    h.HUB_CUSTOMER_HK      <span class="kw">AS</span> ORIGINAL_HK,   <span class="cm">-- source identity preserved</span>
+    h.CUSTOMER_BK,
+    h.RECORD_SOURCE
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">LEFT JOIN</span> <span class="lnk">SAL_CUSTOMER</span> sal
+    <span class="kw">ON</span> sal.DEPENDENT_HUB_CUSTOMER_HK <span class="op">=</span> h.HUB_CUSTOMER_HK;
+
+<span class="cm">-- CRM-1001, ERP-XYZ-99, and USR-44821 now share one GOLDEN_HK</span>
+<span class="cm">-- Original source keys remain intact and individually queryable</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128101;</span>
+      <p><strong>Key advantage:</strong> Match decisions are auditable and reversible. If an MDM algorithm incorrectly linked two different people, you insert a new satellite row on the SAL marking it inactive. The incorrect decision is preserved in history, the correction is recorded with its own timestamp, and the golden view automatically reflects the updated state &mdash; with no data ever destroyed.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: INTERVIEW Q&A — ADVANCED DV
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 05</p>
+    <h2>Interview Q&amp;A &mdash; Advanced DV</h2>
+
+    <p class="interview-section-label">Senior / Architect Level Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          What is bi-temporal modeling and why would you add it to a Data Vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Bi-temporal modeling tracks two independent time dimensions: <strong>Transaction Time</strong> (when data was stored in the system) and <strong>Valid Time</strong> (when the fact was true in the real world). Data Vault naturally provides Transaction Time via <code>LOAD_DATE</code>. Adding Valid Time means adding <code>VALID_FROM</code> and <code>VALID_TO</code> columns to satellite payloads.</p>
+          <p>This enables: <strong>late-arriving data corrections</strong> (a payment that arrived late gets backdated to its actual payment date while preserving when we recorded it); <strong>regulatory reporting</strong> (prove exactly what we reported vs what actually happened on a given date); and <strong>policy backdating</strong> (an insurance policy approved on Feb 1 that becomes effective Jan 1).</p>
+          <p>Not every project needs bi-temporal &mdash; add it only when business or regulatory requirements explicitly demand &ldquo;as-of&rdquo; analysis on both time dimensions. Default to standard Data Vault (transaction time only) unless the business case is clear and documented.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does Data Vault support Master Data Management without a dedicated MDM tool?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>The Raw Vault <strong>preserves all source identities exactly as received</strong> &mdash; no merging, no &ldquo;winner&rdquo; selection at load time. CRM&rsquo;s &ldquo;CRM-1001&rdquo; and ERP&rsquo;s &ldquo;ERP-XYZ-99&rdquo; coexist as separate Hub rows regardless of whether they represent the same real-world entity.</p>
+          <p>When MDM matching decisions are made (by algorithms or manual review), they are stored as <strong>Same-As Links (SALs)</strong> in the Business Vault. The SAL records: which key is the <strong>DRIVER</strong> (canonical/golden identity) and which key is the <strong>DEPENDENT</strong> (matched alternative). Business Vault views then apply SAL mapping to produce the unified &ldquo;golden record&rdquo;.</p>
+          <p>Key benefits: (1) original source identities are never destroyed; (2) match decisions are versioned and auditable via the SAL and its own satellite; (3) if a match decision is wrong, insert a new SAL satellite row marking it inactive &mdash; the history of the incorrect match is preserved while the correction takes effect immediately in downstream views.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Where exactly is the line between a hard business rule and a soft business rule?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Hard rules</strong> are structural, source-faithful operations that do not change the meaning of data: key normalization (TRIM/UPPER), NULL filtering on business keys, hash key computation, data type casting, splitting composite keys. They run in staging. Practical test: could a business analyst look at the output and recognize it as the same data the source sent? If yes, it is a hard rule.</p>
+          <p><strong>Soft rules</strong> add interpretation: code lookups, derivations, classifications, aggregations. They run in the Business Vault or Information Mart. The key question: &ldquo;Would a change in business policy alter the output of this transformation?&rdquo; If yes, it is a soft rule and it must never touch the Raw Vault.</p>
+          <p>The most dangerous gray area is <strong>filtering records for &ldquo;data quality&rdquo; reasons</strong>. Filtering on NULL business keys is a hard rule (structural requirement). Filtering on &ldquo;this record looks invalid&rdquo; is a soft rule &mdash; you are applying a business judgment that could change. Load the record into the Raw Vault with a companion error satellite, and let downstream rules determine handling.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How do you handle a GDPR &ldquo;right to erasure&rdquo; request in a Data Vault that is insert-only?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>This is one of the trickiest architectural challenges in regulated Data Vault implementations. Four defensible approaches exist:</p>
+          <p><strong>1. Pseudonymization</strong> &mdash; Replace the customer&rsquo;s business key and all PII columns with a pseudonym stored in a separate lookup table you control and can delete. The vault retains the pseudonym, but the link to real identity is severed. This is the most common and legally cleanest approach under GDPR.</p>
+          <p><strong>2. Vault encryption with key deletion</strong> &mdash; Encrypt all PII columns with a customer-specific key. To &ldquo;forget,&rdquo; delete that key. Data physically remains in the vault but becomes permanently unreadable without the key. Technically elegant, operationally complex.</p>
+          <p><strong>3. Right-to-erasure satellite</strong> &mdash; Insert a new satellite row with an <code>ERASURE_DATE</code> flag. All downstream marts and views filter out customers with this flag. The raw vault still has data, but no system surfaces it. Simplest to implement; data physically remains.</p>
+          <p><strong>4. Physical deletion of satellite payload rows</strong> &mdash; Delete payload rows from satellites while keeping Hub and Link shells for referential integrity. This is the most legally defensible physical deletion, but violates Data Vault&rsquo;s insert-only principle. Treat it as a formally approved, documented, regulated exception. Never delete Hubs or Links.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 09 Key Takeaways</h3>
+      <ul>
+        <li>Anchor Modeling takes attribute granularity to the extreme &mdash; one table per attribute vs Data Vault&rsquo;s grouped satellites. DV2 satellite splitting achieves most of Anchor Modeling&rsquo;s flexibility with far fewer tables, simpler queries, and mature tooling support.</li>
+        <li>Bi-temporal modeling adds a Valid Time dimension (<code>VALID_FROM</code>/<code>VALID_TO</code>) to satellite payloads alongside Data Vault&rsquo;s native Transaction Time (<code>LOAD_DATE</code>). Use it only when the business explicitly requires &ldquo;what did we believe vs what actually happened&rdquo; analysis across both dimensions.</li>
+        <li>Hard business rules (structural, source-faithful: TRIM, UPPER, hash computation, NULL BK filtering) belong in staging. Soft rules (interpretive: code lookups, derivations, classifications, aggregations) belong in the Business Vault or Information Mart &mdash; never in the Raw Vault where they permanently corrupt the audit trail.</li>
+        <li>Data Vault integrates with MDM through Same-As Links in the Business Vault: Raw Vault preserves all source identities unmodified, MDM match decisions are stored as SAL rows (DRIVER + DEPENDENT), and Business Vault views apply the SAL mapping to produce a golden record view that is fully auditable and reversible.</li>
+        <li>GDPR right-to-erasure in an insert-only vault requires a deliberate architectural choice made at design time: pseudonymization (sever the identity link), encryption with key deletion (data unreadable), right-to-erasure satellite (suppress without deletion), or formal physical deletion of satellite payloads with governance sign-off as a documented regulatory exception.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module08.html">&#8592; Module 08: Performance</a>
+  <a href="module10.html" class="next">Module 10: Automation &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 09 of 14 &mdash; Advanced Data Vault 2.0
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('09', 5);</script>
+</body>
+</html>

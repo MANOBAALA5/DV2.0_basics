@@ -1,0 +1,803 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Introduction to Data Vault 2.0 — what it is, history, the three pillars, when to use it, business benefits, and core vocabulary.">
+<title>Module 01: Introduction to Data Vault 2.0 | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html" class="active">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">01</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--teal);border-color:var(--teal-border);background:var(--teal-dim)">
+      Beginner &nbsp;&middot;&nbsp; Module 01 of 14
+    </span>
+    <h1>Introduction to<br><em style="color:var(--gold)">Data Vault 2.0</em></h1>
+    <p class="mod-hero-desc">
+      Start from zero. Understand what Data Vault 2.0 actually is, where it came from, how it compares to Kimball and Inmon, what the three building blocks are — and why enterprises choose it.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>8 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~45 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Beginner</strong>Level</div>
+      <div class="mod-meta-item"><strong>No prereqs</strong>Start here</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: WHAT IS DATA VAULT 2.0?
+       ============================================================ -->
+  <article class="concept" data-topic="what-is-dv2" id="what-is-dv2">
+    <p class="concept-num">Concept 01</p>
+    <h2>What is Data Vault 2.0?</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        Imagine your company has 50 different apps &mdash; a CRM, an ERP, a website, a mobile app. Every one of them knows about your <strong>"Customer"</strong> differently. The CRM calls it <em>CustomerID</em>. The ERP calls it <em>AccountNumber</em>. The website calls it <em>UserID</em>.
+      </p>
+      <p style="margin-top:0.75rem">
+        <strong>Data Vault 2.0 is a way to store all that data in one place without destroying what makes each source special.</strong> It keeps a permanent, never-changing record of everything that ever happened &mdash; like a <em>black box flight recorder</em> for your business. You can always go back and see exactly what each system said at any point in time.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        Think of a traditional data warehouse like a <strong>finished museum</strong> &mdash; curated, clean, beautiful, but hard to add new exhibits without rearranging everything. Data Vault is like a <strong>modular storage warehouse</strong>: every item has a precise location, you can add new items without moving the old ones, and you can always trace where any item came from.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Formal Definition</h3>
+      <p>
+        Data Vault 2.0 (DV2) is a <strong>system of business intelligence</strong> that includes modeling, methodology, and architecture. It was formalized by Dan Linstedt and Michael Olschimke. The "2.0" adds ensemble modeling, NoSQL patterns, automation, and big data integration on top of the original Data Vault 1.0 specification.
+      </p>
+      <p>
+        At its core, DV2 is a <strong>detail-oriented, historized, uniquely linked set of normalized tables</strong> that support one or more functional areas of business. It is designed to be:
+      </p>
+      <ul>
+        <li><strong>Flexible</strong> &mdash; Add new sources and entities without redesigning existing structures.</li>
+        <li><strong>Scalable</strong> &mdash; Load data in parallel without cross-table dependencies.</li>
+        <li><strong>Auditable</strong> &mdash; Every row has load timestamp and source system metadata. Nothing is ever deleted.</li>
+        <li><strong>Resilient</strong> &mdash; Source system changes rarely break the vault; they add to it.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Key insight:</strong> Data Vault is not a reporting system &mdash; it is an <em>integration layer</em>. Business users never query the Raw Vault directly. Reports are built on top of an Information Mart that transforms vault data into familiar star schemas or wide tables.</p>
+    </div>
+
+    <div class="detail">
+      <h3>The Four Layers of a DV2 Architecture</h3>
+      <p>A complete Data Vault 2.0 implementation has four distinct layers:</p>
+      <ol>
+        <li><strong>Staging Layer</strong> &mdash; Raw data lands here from source systems. No transformation except adding metadata (hash keys, load dates). This layer is typically truncated after each load.</li>
+        <li><strong>Raw Vault</strong> &mdash; The permanent, insert-only integration store. Contains Hubs, Links, and Satellites loaded directly from staging. Data is never changed here.</li>
+        <li><strong>Business Vault</strong> &mdash; Optional layer for derived data, soft business rules, PIT tables, and Bridge tables that make querying easier without breaking auditability.</li>
+        <li><strong>Information Marts</strong> &mdash; Purpose-built reporting tables (star schemas, flat tables, OLAP cubes) consumed by BI tools and data scientists.</li>
+      </ol>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: HISTORY
+       ============================================================ -->
+  <article class="concept" data-topic="history" id="history">
+    <p class="concept-num">Concept 02</p>
+    <h2>History &amp; Evolution</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Data Vault wasn't invented overnight. <strong>Dan Linstedt</strong> spent 10+ years working in enterprise data warehousing, watching Kimball and Inmon approaches struggle with agility and auditability. He quietly developed Data Vault internally at the NSA and other agencies through the 1990s, published the first articles in 2000, and kept refining it. Version 2.0 came in 2013 to address cloud, automation, and big data.
+      </p>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <p class="timeline-year">1990&ndash;1999</p>
+        <p class="timeline-title">Internal Development at NSA &amp; Affiliates</p>
+        <p class="timeline-desc">Dan Linstedt develops the core concepts while solving real large-scale data integration problems. The "hub and spoke" model emerges as a way to integrate many source systems reliably.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">2000</p>
+        <p class="timeline-title">First Public Articles Published</p>
+        <p class="timeline-desc">Linstedt publishes "Data Vault Series" articles, introducing the terms Hub, Link, and Satellite to the public data warehousing community.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">2002</p>
+        <p class="timeline-title">Data Vault 1.0 Formalized</p>
+        <p class="timeline-desc">The first formal specification of Data Vault modeling is published. Early adopters in financial services and telecommunications begin implementations.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">2013</p>
+        <p class="timeline-title">Data Vault 2.0 Released</p>
+        <p class="timeline-desc">Co-authored with Michael Olschimke, DV2 adds: ensemble modeling for NoSQL/BigData, automation and metadata-driven development, SEI/CMMI-compliant methodology, and agile sprint integration.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">2015&ndash;2020</p>
+        <p class="timeline-title">Cloud Adoption Accelerates</p>
+        <p class="timeline-desc">Snowflake, BigQuery, and Databricks emerge. Community develops cloud-native DV patterns. Tools like dbt, WhereScape, and Datavault4dbt gain traction.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="timeline-year">2021&ndash;Present</p>
+        <p class="timeline-title">Mainstream Enterprise Adoption</p>
+        <p class="timeline-desc">Data Vault becomes a standard pattern in enterprise data strategy. CDVDM (Certified Data Vault Data Modeler) certification goes mainstream. The community adds streaming vault and AI/ML integration patterns.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: DV VS KIMBALL VS INMON
+       ============================================================ -->
+  <article class="concept" data-topic="comparison" id="comparison">
+    <p class="concept-num">Concept 03</p>
+    <h2>Data Vault vs Kimball vs Inmon</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        There are three main schools of thought for enterprise data warehousing. <strong>Inmon</strong> says build a normalized 3NF corporate warehouse first, then derive data marts. <strong>Kimball</strong> says build denormalized star-schema data marts first, and the warehouse emerges from joining them. <strong>Data Vault</strong> says separate the integration concerns from the reporting concerns completely &mdash; store everything raw and historized in the vault, then build any kind of reporting layer on top.
+      </p>
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comp-card">
+        <h4 style="color:var(--teal)">&#9670; Data Vault 2.0</h4>
+        <ul>
+          <li>Insert-only, never delete or update</li>
+          <li>Full historical auditability built-in</li>
+          <li>Highly agile: add sources without redesign</li>
+          <li>Parallel loading: no cross-table dependency</li>
+          <li>Separates integration from reporting layers</li>
+          <li>Excellent for regulatory compliance</li>
+          <li>Steeper initial learning curve</li>
+          <li>Requires information mart layer for BI</li>
+        </ul>
+      </div>
+      <div class="comp-card">
+        <h4 style="color:var(--gold)">&#9670; Kimball (Dimensional)</h4>
+        <ul>
+          <li>Star schema: Facts + Dimensions</li>
+          <li>Business users can query directly</li>
+          <li>Fast query performance out of the box</li>
+          <li>SCD2 for slowly changing dimensions</li>
+          <li>Adding new sources requires refactoring</li>
+          <li>Limited auditability; history via SCD only</li>
+          <li>Well-understood; large skill pool</li>
+          <li>Best for stable, well-defined domains</li>
+        </ul>
+      </div>
+      <div class="comp-card">
+        <h4 style="color:var(--purple)">&#9670; Inmon (3NF EDW)</h4>
+        <ul>
+          <li>Normalized 3NF enterprise data warehouse</li>
+          <li>Single source of truth at corporate level</li>
+          <li>Subject-area data marts derived from EDW</li>
+          <li>High data quality and consistency</li>
+          <li>Longest time-to-first-report</li>
+          <li>Expensive to build and maintain</li>
+          <li>Very structured; good for stable enterprises</li>
+          <li>Less flexible for agile environments</li>
+        </ul>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Criterion</th>
+          <th>Data Vault 2.0</th>
+          <th>Kimball</th>
+          <th>Inmon</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Historical Auditability</strong></td>
+          <td style="color:var(--green)">&#10003; Full, automatic</td>
+          <td style="color:var(--amber)">Partial (SCD2)</td>
+          <td style="color:var(--amber)">Partial</td>
+        </tr>
+        <tr>
+          <td><strong>Agility (add sources)</strong></td>
+          <td style="color:var(--green)">&#10003; Non-breaking</td>
+          <td style="color:var(--coral)">Requires refactor</td>
+          <td style="color:var(--coral)">Major effort</td>
+        </tr>
+        <tr>
+          <td><strong>Parallel Loading</strong></td>
+          <td style="color:var(--green)">&#10003; Yes, by design</td>
+          <td style="color:var(--amber)">Limited</td>
+          <td style="color:var(--amber)">Limited</td>
+        </tr>
+        <tr>
+          <td><strong>BI Query Simplicity</strong></td>
+          <td style="color:var(--coral)">Needs Info Mart</td>
+          <td style="color:var(--green)">&#10003; Direct star schema</td>
+          <td style="color:var(--amber)">Via data marts</td>
+        </tr>
+        <tr>
+          <td><strong>Regulatory Compliance</strong></td>
+          <td style="color:var(--green)">&#10003; Excellent</td>
+          <td style="color:var(--amber)">Moderate</td>
+          <td style="color:var(--amber)">Moderate</td>
+        </tr>
+        <tr>
+          <td><strong>Time to First Value</strong></td>
+          <td style="color:var(--amber)">Medium</td>
+          <td style="color:var(--green)">&#10003; Fast</td>
+          <td style="color:var(--coral)">Slow</td>
+        </tr>
+        <tr>
+          <td><strong>Suitable for NoSQL/BigData</strong></td>
+          <td style="color:var(--green)">&#10003; Yes (DV2)</td>
+          <td style="color:var(--coral)">Limited</td>
+          <td style="color:var(--coral)">Limited</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip">
+      <p><strong>Practical guidance:</strong> Data Vault excels when you have many source systems, strict regulatory requirements, or a need for full historical lineage. Kimball remains the best choice for bounded, well-understood domains with a small number of sources where time-to-market is critical. Many enterprises use both &mdash; DV for the integration layer, star schema for the reporting layer.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: THE THREE PILLARS
+       ============================================================ -->
+  <article class="concept" data-topic="three-pillars" id="three-pillars">
+    <p class="concept-num">Concept 04</p>
+    <h2>The Three Pillars: Hub, Link, Satellite</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Data Vault uses exactly three types of tables. <strong>Hubs</strong> are for <em>things</em> (a Customer, a Product, an Order). <strong>Links</strong> are for <em>relationships</em> between things (a Customer placed an Order). <strong>Satellites</strong> are for <em>descriptive details</em> that change over time (the Customer's address, the Order's status). That's it. Every piece of data in your entire enterprise fits into one of these three buckets.
+      </p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar pillar-hub">
+        <span class="pillar-icon">&#9711;</span>
+        <p class="pillar-name">HUB</p>
+        <p class="pillar-desc">Stores unique business keys. One row per unique entity. Never changes. No descriptive data.</p>
+      </div>
+      <div class="pillar pillar-link">
+        <span class="pillar-icon">&#128279;</span>
+        <p class="pillar-name">LINK</p>
+        <p class="pillar-desc">Stores relationships between hubs. One row per unique combination of business keys. Insert-only.</p>
+      </div>
+      <div class="pillar pillar-sat">
+        <span class="pillar-icon">&#128225;</span>
+        <p class="pillar-name">SATELLITE</p>
+        <p class="pillar-desc">Stores descriptive attributes. Many rows per hub/link key. Each row captures a point-in-time snapshot.</p>
+      </div>
+    </div>
+
+    <div class="detail">
+      <h3>Hub: The Identity Store</h3>
+      <p>
+        A Hub stores the <strong>business key</strong> (BK) &mdash; the unique identifier that the business uses to refer to a real-world entity. For a Customer, that might be a CustomerID, a Tax Number, or an Email Address depending on your business context.
+      </p>
+      <p>
+        Hubs contain: a surrogate hash key, the business key, load date, and record source. Nothing else. No names, addresses, or any descriptive data &mdash; that all goes in Satellites.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Hub Customer Table Structure</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- HUB_CUSTOMER: stores unique customer business keys</span>
+<span class="kw">CREATE TABLE</span> <span class="hub">HUB_CUSTOMER</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- SHA-256 hash of business key</span>
+    <span class="str">CUSTOMER_BK</span>      <span class="typ">VARCHAR(50)</span>   <span class="kw">NOT NULL</span>,  <span class="cm">-- the actual business key</span>
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- when first seen</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,  <span class="cm">-- which system sent this</span>
+    <span class="kw">CONSTRAINT</span> pk_hub_customer <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>)
+);
+
+<span class="cm">-- Insert: only new business keys (no duplicates ever)</span>
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_CUSTOMER</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.CUSTOMER_ID))) <span class="kw">AS</span> HUB_CUSTOMER_HK,
+    src.CUSTOMER_ID                    <span class="kw">AS</span> CUSTOMER_BK,
+    src.LOAD_DATE,
+    src.RECORD_SOURCE
+<span class="kw">FROM</span> STG_CUSTOMER src
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+    <span class="kw">WHERE</span> h.HUB_CUSTOMER_HK = <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.CUSTOMER_ID)))
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Link: The Relationship Store</h3>
+      <p>
+        A Link records that a relationship exists between two or more hubs. Links are the key to Data Vault's flexibility &mdash; you can change how entities relate without touching the hub tables.
+      </p>
+      <p>
+        Links contain: a surrogate hash key (hash of all participating hub keys), the participating hub hash keys (as foreign keys), load date, and record source. No descriptive data.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Link CustomerOrder Table Structure</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- LINK_CUSTOMER_ORDER: customer placed an order</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (
+    <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="hub">HUB_CUSTOMER_HK</span>         <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_CUSTOMER</span>
+    <span class="hub">HUB_ORDER_HK</span>            <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_ORDER</span>
+    <span class="str">LOAD_DATE</span>               <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>           <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_lnk_co <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_CUSTOMER_ORDER_HK</span>)
+);
+
+<span class="cm">-- Hash key = hash of all participating business keys combined</span>
+<span class="kw">INSERT INTO</span> <span class="lnk">LINK_CUSTOMER_ORDER</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.CUSTOMER_ID)),<span class="str">'-1'</span>) <span class="op">||</span>
+        <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.ORDER_ID)),<span class="str">'-1'</span>)
+    )               <span class="kw">AS</span> LINK_CUSTOMER_ORDER_HK,
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.CUSTOMER_ID))) <span class="kw">AS</span> HUB_CUSTOMER_HK,
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.ORDER_ID)))    <span class="kw">AS</span> HUB_ORDER_HK,
+    src.LOAD_DATE,
+    src.RECORD_SOURCE
+<span class="kw">FROM</span> STG_ORDER src
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> l
+    <span class="kw">WHERE</span> l.LINK_CUSTOMER_ORDER_HK = <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.CUSTOMER_ID)),<span class="str">'-1'</span>) <span class="op">||</span> <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(src.ORDER_ID)),<span class="str">'-1'</span>)
+    )
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Satellite: The Descriptive Store</h3>
+      <p>
+        Satellites hold all the descriptive context &mdash; the attributes that describe a hub or a link. Because satellites are insert-only and each row carries a load date, you automatically get a full history of every change to every attribute. This is how Data Vault achieves effortless historical auditability.
+      </p>
+      <p>
+        Satellites contain: the parent hub/link hash key, a load date, an optional load end date, a HashDiff (hash of payload columns for change detection), the record source, and the actual descriptive columns.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Satellite Customer Demographics</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAT_CUSTOMER_DEMOGRAPHICS: descriptive attributes for HUB_CUSTOMER</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_CUSTOMER</span>
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,  <span class="cm">-- when this version was loaded</span>
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP</span>    <span class="kw">NULL</span>,      <span class="cm">-- when the next version appeared</span>
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- hash of all payload columns</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Payload columns (the actual data)</span>
+    FIRST_NAME       <span class="typ">VARCHAR(100)</span>,
+    LAST_NAME        <span class="typ">VARCHAR(100)</span>,
+    EMAIL            <span class="typ">VARCHAR(200)</span>,
+    DATE_OF_BIRTH    <span class="typ">DATE</span>,
+    COUNTRY_CODE     <span class="typ">CHAR(3)</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_cd <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+);
+
+<span class="cm">-- Only insert when payload has actually changed (HashDiff comparison)</span>
+<span class="kw">INSERT INTO</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+<span class="kw">SELECT</span>
+    src.HUB_CUSTOMER_HK,
+    src.LOAD_DATE,
+    <span class="kw">NULL</span>    <span class="kw">AS</span> LOAD_END_DATE,
+    src.HASH_DIFF,
+    src.RECORD_SOURCE,
+    src.FIRST_NAME, src.LAST_NAME, src.EMAIL,
+    src.DATE_OF_BIRTH, src.COUNTRY_CODE
+<span class="kw">FROM</span> STG_CUSTOMER_DEMOGRAPHICS src
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> sat
+    <span class="kw">ON</span> sat.HUB_CUSTOMER_HK = src.HUB_CUSTOMER_HK
+    <span class="kw">AND</span> sat.LOAD_END_DATE <span class="kw">IS NULL</span>          <span class="cm">-- current record only</span>
+<span class="kw">WHERE</span> sat.HASH_DIFF <span class="kw">IS NULL</span>             <span class="cm">-- no existing record, OR</span>
+   <span class="kw">OR</span> sat.HASH_DIFF <span class="op">!=</span> src.HASH_DIFF;    <span class="cm">-- payload has changed</span></pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: WHEN TO USE DATA VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="when-to-use" id="when-to-use">
+    <p class="concept-num">Concept 05</p>
+    <h2>When to Use Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Data Vault isn't always the right tool. It shines in specific situations. If you have <strong>many source systems that change frequently</strong>, <strong>strict regulatory requirements</strong> for audit trails, or a need to <strong>integrate data from very different systems</strong>, Data Vault is probably your best choice. If you have one or two stable sources and just need fast reports, Kimball might be simpler.
+      </p>
+    </div>
+
+    <div class="usecase-grid">
+      <div class="usecase-card banking">
+        <div class="usecase-icon">&#127968;</div>
+        <p class="usecase-industry">Banking &amp; Finance</p>
+        <p class="usecase-title">Regulatory Reporting</p>
+        <p class="usecase-desc">Full audit trail for BCBS 239, GDPR, and AML compliance. Every data point traceable to source.</p>
+      </div>
+      <div class="usecase-card insurance">
+        <div class="usecase-icon">&#127775;</div>
+        <p class="usecase-industry">Insurance</p>
+        <p class="usecase-title">Policy &amp; Claims 360</p>
+        <p class="usecase-desc">Integrate policy, claims, customer, and agent data across dozens of legacy systems.</p>
+      </div>
+      <div class="usecase-card retail">
+        <div class="usecase-icon">&#128717;</div>
+        <p class="usecase-industry">Retail &amp; E-Commerce</p>
+        <p class="usecase-title">Customer 360</p>
+        <p class="usecase-desc">Unify online, in-store, mobile, and loyalty system data into a single customer view.</p>
+      </div>
+      <div class="usecase-card telecom">
+        <div class="usecase-icon">&#128222;</div>
+        <p class="usecase-industry">Telecom</p>
+        <p class="usecase-title">Usage &amp; Billing</p>
+        <p class="usecase-desc">Handle billions of CDRs (call detail records) with complete lineage for billing disputes.</p>
+      </div>
+      <div class="usecase-card health">
+        <div class="usecase-icon">&#127973;</div>
+        <p class="usecase-industry">Healthcare</p>
+        <p class="usecase-title">Patient Data Integration</p>
+        <p class="usecase-desc">HIPAA-compliant integration of EHR, billing, lab, and claims data with full provenance.</p>
+      </div>
+    </div>
+
+    <div class="detail">
+      <h3>The Data Vault Fit Criteria</h3>
+      <p>Data Vault is a strong fit when your environment has <strong>three or more of these characteristics</strong>:</p>
+      <ul>
+        <li>5+ source systems contributing to the data warehouse</li>
+        <li>Regulatory requirement for full data lineage and auditability</li>
+        <li>Frequently changing source systems and business rules</li>
+        <li>Agile development with multiple parallel teams</li>
+        <li>Multi-decade data retention requirements</li>
+        <li>Need to detect and respond to source system changes quickly</li>
+        <li>Large data volumes requiring parallel loading strategies</li>
+      </ul>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>When NOT to use Data Vault:</strong> If you have 1-2 stable sources, a small team, and purely analytical workloads with no regulatory requirements — a star schema (Kimball) will get you to insights faster with less overhead. Data Vault has real complexity costs that only pay off at a certain scale and compliance pressure.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: BUSINESS BENEFITS
+       ============================================================ -->
+  <article class="concept" data-topic="business-benefits" id="business-benefits">
+    <p class="concept-num">Concept 06</p>
+    <h2>DV2 Business Benefits</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Data Vault 2.0 gives businesses four superpowers: <strong>you can always see exactly what happened in the past</strong> (auditability), <strong>you can add new data sources without breaking what already works</strong> (agility), <strong>you can trust the data because nothing is ever deleted</strong> (integrity), and <strong>you can load data in parallel much faster</strong> (scalability).
+      </p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128272;</div>
+        <p class="benefit-title">Full Auditability</p>
+        <p class="benefit-desc">Every row has a load timestamp and source system tag. Nothing is ever updated or deleted. Auditors can trace any data point to its exact origin.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#9889;</div>
+        <p class="benefit-title">Agile by Design</p>
+        <p class="benefit-desc">Add a new source system by adding new tables. Existing loads keep running. New requirements don't break old ones.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#9881;</div>
+        <p class="benefit-title">Parallel Loading</p>
+        <p class="benefit-desc">Hubs, Links, and Satellites have no inter-dependencies. All tables can be loaded simultaneously — dramatically cutting load window times.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128200;</div>
+        <p class="benefit-title">Infinite Scalability</p>
+        <p class="benefit-desc">The insert-only, parallel pattern maps perfectly to cloud MPP platforms. Scale compute independently of storage.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128269;</div>
+        <p class="benefit-title">Time-Travel Queries</p>
+        <p class="benefit-desc">Because all history is preserved with timestamps, you can reconstruct the state of any entity at any point in time without any extra effort.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#127942;</div>
+        <p class="benefit-title">Regulatory Compliance</p>
+        <p class="benefit-desc">GDPR, BCBS 239, SOX, HIPAA — all require data lineage and audit trails. DV2 provides these automatically as a byproduct of its design.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128296;</div>
+        <p class="benefit-title">Automation Ready</p>
+        <p class="benefit-desc">DV structures are highly regular and templated — perfect for code generation. Metadata-driven tools can build 80% of the vault automatically.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">&#128101;</div>
+        <p class="benefit-title">Team Scalability</p>
+        <p class="benefit-desc">Multiple teams can work on different hubs, links, and satellites simultaneously. No code merge conflicts on vault objects in different areas.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 7: CORE VOCABULARY
+       ============================================================ -->
+  <article class="concept" data-topic="vocabulary" id="vocabulary">
+    <p class="concept-num">Concept 07</p>
+    <h2>Core Vocabulary Reference</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Data Vault has its own language. Before reading any DV content, make sure you know these terms cold. They'll appear constantly, and confusion about them is the #1 cause of DV design mistakes.
+      </p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Term</th>
+          <th>Abbreviation</th>
+          <th>What it means</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Business Key</strong></td>
+          <td><code>BK</code></td>
+          <td>The natural key used by the business to identify an entity (e.g., CustomerID, OrderNumber, ISIN). The most important concept in all of Data Vault.</td>
+        </tr>
+        <tr>
+          <td><strong>Hash Key</strong></td>
+          <td><code>HK</code></td>
+          <td>A surrogate key derived by hashing the business key. Used as primary key in Hubs and as foreign keys across all other tables. Typically MD5 or SHA-256.</td>
+        </tr>
+        <tr>
+          <td><strong>HashDiff</strong></td>
+          <td><code>HDIFF</code></td>
+          <td>A hash of all payload (descriptive) columns in a satellite. Used to detect whether a row has changed since last load — if HashDiff matches, no insert needed.</td>
+        </tr>
+        <tr>
+          <td><strong>Load Date</strong></td>
+          <td><code>LDTS</code></td>
+          <td>The timestamp when a row was inserted into the vault. Represents when the data arrived in the warehouse, not when the business event occurred.</td>
+        </tr>
+        <tr>
+          <td><strong>Record Source</strong></td>
+          <td><code>RSRC</code></td>
+          <td>A string identifying which source system provided this row. Enables lineage and helps resolve conflicts between source systems.</td>
+        </tr>
+        <tr>
+          <td><strong>Raw Vault</strong></td>
+          <td><code>RV</code></td>
+          <td>The insert-only, lossless integration layer containing Hubs, Links, and Satellites loaded directly from staging with no business rules applied.</td>
+        </tr>
+        <tr>
+          <td><strong>Business Vault</strong></td>
+          <td><code>BV</code></td>
+          <td>Optional layer above Raw Vault for derived data, soft business rules, PIT tables, and Bridge tables. Separate from Raw Vault to preserve lineage.</td>
+        </tr>
+        <tr>
+          <td><strong>Information Mart</strong></td>
+          <td><code>IM</code></td>
+          <td>The consumer-facing reporting layer. Star schemas, flat tables, or wide tables built from vault data for BI tools and analytics.</td>
+        </tr>
+        <tr>
+          <td><strong>Point-in-Time Table</strong></td>
+          <td><code>PIT</code></td>
+          <td>A Business Vault table that pre-joins multiple satellite timelines for a hub, creating one row per entity per date for fast snapshot queries.</td>
+        </tr>
+        <tr>
+          <td><strong>Bridge Table</strong></td>
+          <td><code>BRIDGE</code></td>
+          <td>A Business Vault table that pre-flattens a Hub-Link-Hub chain into a wide lookup table, avoiding complex multi-join queries at report time.</td>
+        </tr>
+        <tr>
+          <td><strong>Effectivity Satellite</strong></td>
+          <td><code>EFF SAT</code></td>
+          <td>A satellite on a Link that tracks when the relationship was active/inactive (open/close dates). Different from the link itself, which just records that the relationship ever existed.</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-Active Satellite</strong></td>
+          <td><code>MAS</code></td>
+          <td>A satellite that stores repeating groups (e.g., a customer can have multiple phone numbers). Has an additional sequence/rank key in its composite PK.</td>
+        </tr>
+      </tbody>
+    </table>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 8: INTERVIEW Q&A
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 08</p>
+    <h2>Interview Q&amp;A: DV Fundamentals</h2>
+
+    <p class="interview-section-label">Junior / Mid-Level Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          What is Data Vault 2.0 and how does it differ from a traditional data warehouse?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Data Vault 2.0 is an enterprise data warehousing methodology that separates integration from reporting. The Raw Vault layer stores <strong>all incoming data without transformation</strong>, using Hubs (business keys), Links (relationships), and Satellites (descriptive attributes). Traditional star schema warehouses transform data during load and often lose historical context.</p>
+          <p>Key DV2 differentiators: insert-only (no updates/deletes), full historical auditability via load timestamps, parallel loading capability, and resilience to source system changes. The reporting layer (Information Marts) is built separately on top, consuming vault data.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Hub and what should (and shouldn't) it contain?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A Hub stores <strong>unique business keys</strong> — the identifiers the business uses to refer to real-world entities like customers, products, or orders.</p>
+          <p><strong>Must contain:</strong> Hash Key (primary key, derived from BK), Business Key (the natural key), Load Date, Record Source.</p>
+          <p><strong>Must NOT contain:</strong> Any descriptive attributes, names, addresses, amounts, status codes, or any data that could change over time. Those belong in Satellites. Descriptive data in Hubs is the most common DV design mistake.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a HashDiff and why do we need it?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A HashDiff is a hash (usually MD5 or SHA-256) computed over all the payload (descriptive) columns in a satellite row. It's the key to efficient change detection.</p>
+          <p>When loading a satellite, instead of comparing every individual column between the new incoming row and the current satellite row, you simply compare the HashDiff values. If they match, no insert is needed — the data hasn't changed. If they differ, insert a new row to capture the change.</p>
+          <p>This pattern makes satellite loading dramatically simpler and faster, especially for satellites with many columns. The HashDiff is always computed in the staging layer before vault loading begins.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          Why does Data Vault use insert-only loading? What about performance?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Insert-only loading exists for three reasons: <strong>auditability</strong> (you can never accidentally destroy data), <strong>parallelism</strong> (INSERT operations don't cause row-level locks like UPDATE does), and <strong>resilience</strong> (re-loading data is idempotent — running twice produces the same result).</p>
+          <p>Performance concern is valid but manageable. Most vault tables have hash key indexes. Satellites use the HashDiff pattern to avoid duplicate inserts. PIT tables in the Business Vault pre-materialize the current-record lookup, so queries don't need expensive MAX(LOAD_DATE) aggregations at query time. On cloud platforms (Snowflake, BigQuery), the columnar storage model handles large insert-only tables very efficiently.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="interview-section-label">Senior / Architect Level Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          How do you handle a situation where a business key changes? (e.g., customer number re-assignment)
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>This is a classic challenge in Data Vault design. There are two valid approaches:</p>
+          <p><strong>1. Same-As Link (SAL):</strong> Create a Link that relates the old business key to the new business key. Both keys remain in the Hub. The SAL records the mapping, and the Business Vault uses this mapping to produce a "golden record" with a canonical key. This preserves full history and lineage.</p>
+          <p><strong>2. Record Source routing:</strong> If the BK re-assignment is a clean cut-over from one source system to another, you may simply start loading from the new source, and the PIT table + effectivity satellite handle the timeline correctly.</p>
+          <p>The SAL approach is preferred for regulatory environments where you must prove data lineage across the key change event.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the difference between a Hard Business Rule and a Soft Business Rule in DV2?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Hard Business Rules</strong> are structural rules that do NOT change the values of the data &mdash; things like determining which field is the business key, parsing a composite key, filtering out NULL business keys, and standardizing key format (TRIM/UPPER). These are applied in the staging layer and must run before Raw Vault loading.</p>
+          <p><strong>Soft Business Rules</strong> are interpretive rules that transform or combine values &mdash; things like calculating a customer's risk score, deriving a product category from a code table, or joining CRM and ERP customer records. These <strong>never go in the Raw Vault</strong>. They belong in the Business Vault or Information Marts.</p>
+          <p>This separation is fundamental to DV2. If you put soft rules in the Raw Vault and a rule changes, you've corrupted your audit trail. Keeping rules in the Business Vault means you can re-derive any result as rules evolve, while the Raw Vault remains unchanged.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 01 Key Takeaways</h3>
+      <ul>
+        <li>Data Vault 2.0 is an integration methodology: Raw Vault (Hubs/Links/Sats) stores all data permanently; Information Marts are the reporting layer built on top.</li>
+        <li>The three building blocks are Hubs (business keys), Links (relationships), and Satellites (descriptive attributes). Every piece of enterprise data fits one of these categories.</li>
+        <li>DV2 is insert-only: no updates, no deletes. Every row has a Load Date and Record Source for complete auditability.</li>
+        <li>DV2 shines with many source systems, regulatory requirements, or agile teams. It's not always the right tool — Kimball is often simpler for fewer sources.</li>
+        <li>Hard business rules (structural) go in staging. Soft business rules (interpretive) go in Business Vault or Info Marts — never in Raw Vault.</li>
+        <li>HashDiff enables efficient change detection in Satellites without comparing every column individually.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="../index.html">&#8592; Home</a>
+  <a href="module02.html" class="next">Module 02: Core Modeling Concepts &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 01 of 14 &mdash; Introduction to Data Vault 2.0
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('01', 8);</script>
+</body>
+</html>

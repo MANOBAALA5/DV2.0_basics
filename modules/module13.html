@@ -1,0 +1,636 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Enterprise Case Studies — Banking, Retail, Healthcare HIPAA, legacy DW migration, and Data Governance with Data Vault 2.0. Architect-level real-world patterns.">
+<title>Module 13: Enterprise Case Studies | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html" class="active">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">13</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--purple);border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.08)">
+      Architect &nbsp;&middot;&nbsp; Module 13 of 14
+    </span>
+    <h1>Enterprise<br><em style="color:var(--purple)">Case Studies</em></h1>
+    <p class="mod-hero-desc">
+      Theory crystallises in the real world. This module walks through four enterprise-scale Data Vault implementations across Banking, Retail, Healthcare, and legacy migration scenarios &mdash; with the specific design decisions, regulatory constraints, and performance trade-offs that define architect-level thinking.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~70 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Architect</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;12</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: BANKING & FINANCE CASE STUDY
+       ============================================================ -->
+  <article class="concept" data-topic="banking-case" id="banking-case">
+    <p class="concept-num">Concept 01</p>
+    <h2>Banking &amp; Finance Case Study</h2>
+
+    <div class="detail">
+      <h3>Scenario: Global Retail Bank — Regulatory Reporting Unification</h3>
+      <p>
+        A global retail bank operates across 22 countries with 14 core banking systems (Temenos, Flexcube, FIS), a separate CRM (Salesforce), a risk engine (Moody&rsquo;s), and three legacy mainframe systems dating to the 1980s. The regulatory team produces BCBS 239, Basel III, and IFRS 9 reports &mdash; all requiring the same entity data reconciled across every source.
+      </p>
+      <p>
+        <strong>Problem:</strong> each reporting team maintained its own reconciliation queries. CUSTOMER_ID in the core banking system was a 12-digit numeric; in Salesforce it was an alphanumeric prefixed with &ldquo;CRM&mdash;&rdquo;; on the mainframe it was a 6-digit legacy code. Three different keys for the same person. Risk models and regulatory reports produced different customer counts depending on which source they used.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>DV2 Solution: Same-As Link (LINK_CUSTOMER_SAME_AS)</h3>
+      <p>
+        A Same-As Link is a Data Vault pattern that records that two different business keys represent the same real-world entity. It links two Hub rows in the same Hub table &mdash; connecting the core banking CUSTOMER_HK to the Salesforce CUSTOMER_HK to the mainframe CUSTOMER_HK via a Golden Record satellite.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Same-As Link DDL (Banking MDM Pattern)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Same-As Link: two Hub rows that represent the same real-world customer</span>
+<span class="cm">-- Used to reconcile customer IDs across 14 core banking systems</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_CUSTOMER_SAME_AS</span> (
+    <span class="lnk">LINK_CUSTOMER_SAME_AS_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- hash of both HKs concatenated</span>
+    <span class="hub">HUB_CUSTOMER_HK_MASTER</span>    <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- the surviving / golden record HK</span>
+    <span class="hub">HUB_CUSTOMER_HK_DUPLICATE</span> <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- the matched / subordinate HK</span>
+    <span class="str">LOAD_DATE</span>                  <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>              <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,  <span class="cm">-- MDM system that determined match</span>
+    <span class="kw">CONSTRAINT</span> pk_lnk_cust_same <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_CUSTOMER_SAME_AS_HK</span>)
+);
+
+<span class="cm">-- Satellite on Same-As Link: match quality metadata</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_L_CUSTOMER_SAME_AS_MATCH_DETAIL</span> (
+    <span class="lnk">LINK_CUSTOMER_SAME_AS_HK</span>  <span class="typ">CHAR(32)</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>                  <span class="typ">TIMESTAMP</span>   <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>                  <span class="typ">CHAR(32)</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>              <span class="typ">VARCHAR(100)</span><span class="kw">NOT NULL</span>,
+    MATCH_SCORE                <span class="typ">DECIMAL(5,4)</span>,           <span class="cm">-- 0.0000 to 1.0000</span>
+    MATCH_METHOD               <span class="typ">VARCHAR(50)</span>,            <span class="cm">-- EXACT_SSN, FUZZY_NAME_DOB, etc.</span>
+    MATCH_CONFIDENCE           <span class="typ">VARCHAR(20)</span>,            <span class="cm">-- HIGH / MEDIUM / LOW</span>
+    REVIEWED_BY                <span class="typ">VARCHAR(100)</span>,           <span class="cm">-- human reviewer ID if manual</span>
+    REVIEW_DATE                <span class="typ">TIMESTAMP</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_match <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_CUSTOMER_SAME_AS_HK</span>, <span class="str">LOAD_DATE</span>)
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Key Regulatory Outcomes</h3>
+      <ul>
+        <li><strong>BCBS 239 compliance:</strong> single lineage-traceable customer entity across all 14 source systems. Regulators can trace any aggregate figure back to individual source rows.</li>
+        <li><strong>Basel III LCR reporting:</strong> the Link between ACCOUNT and CUSTOMER with Effectivity Satellites enables a point-in-time view of which accounts were associated with which customers on any reporting date &mdash; critical for High-Quality Liquid Assets calculations.</li>
+        <li><strong>GDPR right-to-erasure:</strong> because all customer attributes are in Satellites, a Data Erasure satellite can be inserted to flag that a customer&rsquo;s PII must be masked in mart queries &mdash; without deleting any raw vault rows (preserving regulatory audit trail).</li>
+      </ul>
+    </div>
+
+    <!-- SVG: Banking DV model -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Banking Data Vault: Customer, Account, Transaction hubs with links and satellites">
+        <!-- HUB CUSTOMER -->
+        <rect x="10" y="50" width="140" height="100" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="80" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)" letter-spacing="1">HUB</text>
+        <text x="80" y="78" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#22d3c8">CUSTOMER</text>
+        <text x="80" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">NATIONAL_ID</text>
+        <text x="80" y="114" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">CRM_ID</text>
+        <text x="80" y="130" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">CORE_BANKING_ID</text>
+
+        <!-- LINK CUSTOMER-ACCOUNT -->
+        <line x1="152" y1="100" x2="220" y2="100" stroke="rgba(167,139,250,0.45)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="218,95 231,100 218,105" fill="rgba(167,139,250,0.6)"/>
+
+        <!-- HUB ACCOUNT -->
+        <rect x="232" y="50" width="140" height="100" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="302" y="78" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#22d3c8">ACCOUNT</text>
+        <text x="302" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">ACCOUNT_NUMBER</text>
+        <text x="302" y="114" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">IBAN</text>
+
+        <!-- LINK ACCOUNT-TRANSACTION -->
+        <line x1="374" y1="100" x2="440" y2="100" stroke="rgba(167,139,250,0.45)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="438,95 451,100 438,105" fill="rgba(167,139,250,0.6)"/>
+
+        <!-- HUB TRANSACTION -->
+        <rect x="452" y="50" width="140" height="100" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="522" y="78" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#22d3c8">TRANSACTION</text>
+        <text x="522" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">TRANSACTION_REF</text>
+        <text x="522" y="114" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">CLEARING_ID</text>
+
+        <!-- SAT on CUSTOMER -->
+        <rect x="10" y="165" width="140" height="28" rx="5" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.25)" stroke-width="1.2"/>
+        <text x="80" y="183" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.6)">SAT: KYC / AML / CreditRisk</text>
+
+        <!-- SAT on ACCOUNT -->
+        <rect x="232" y="165" width="140" height="28" rx="5" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.25)" stroke-width="1.2"/>
+        <text x="302" y="183" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.6)">SAT: Balance / Status</text>
+
+        <!-- SAT on TRANSACTION -->
+        <rect x="452" y="165" width="140" height="28" rx="5" fill="rgba(167,139,250,0.05)" stroke="rgba(167,139,250,0.25)" stroke-width="1.2"/>
+        <text x="522" y="183" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.6)">SAT: Amount / FX / Category</text>
+
+        <!-- Same-As link -->
+        <rect x="610" y="50" width="105" height="60" rx="6" fill="rgba(232,184,75,0.06)" stroke="rgba(232,184,75,0.3)" stroke-width="1.2"/>
+        <text x="662" y="75" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.7)">SAME-AS LINK</text>
+        <text x="662" y="93" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.5)">MDM reconciliation</text>
+        <line x1="610" y1="80" x2="593" y2="80" stroke="rgba(232,184,75,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="596,75 583,80 596,85" fill="rgba(232,184,75,0.5)"/>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Architect lesson:</strong> in banking, the audit trail is a first-class regulatory requirement, not a nice-to-have. Data Vault&rsquo;s insert-only design means every regulatory examiner question about historical data states can be answered by querying the Raw Vault directly. The vault IS the audit log &mdash; there is no separate audit table to maintain.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: RETAIL & E-COMMERCE CASE STUDY
+       ============================================================ -->
+  <article class="concept" data-topic="retail-case" id="retail-case">
+    <p class="concept-num">Concept 02</p>
+    <h2>Retail &amp; E-Commerce Case Study</h2>
+
+    <div class="detail">
+      <h3>Scenario: Global Fashion Retailer — 360&deg; Customer &amp; Inventory Platform</h3>
+      <p>
+        A global fashion retailer operates 450 physical stores, a global e-commerce site, a mobile app, and a wholesale division. Customer data arrives from: POS systems (in-store), Salesforce Commerce Cloud (online), a loyalty platform, a marketing attribution engine, and a returns management system. Each uses a different customer identifier. Inventory is tracked across 12 ERP instances by region.
+      </p>
+      <p>
+        <strong>Business problem:</strong> &ldquo;What did customer X buy, return, and click on in the last 90 days, across all channels?&rdquo; was a 4-day manual data exercise. Inventory analysts had no single view of stock levels across regions.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>DV2 Design Decisions</h3>
+      <ul>
+        <li><strong>Hub: CUSTOMER</strong> &mdash; business key is the email address (lowest common denominator across all source systems). CRM ID, loyalty card number, and device fingerprint are all business key candidates modelled as a cross-reference satellite.</li>
+        <li><strong>Hub: PRODUCT</strong> &mdash; business key is the Global Trade Item Number (GTIN). Style code and SKU are alternate keys in a satellite. The same physical product sold in different channels has the same GTIN Hub row.</li>
+        <li><strong>Hub: STORE and Hub: CHANNEL</strong> &mdash; separate Hubs for physical stores and digital channels. A Hierarchy Link connects STORE to REGION to COUNTRY for rollup reporting.</li>
+        <li><strong>Link: CUSTOMER + PRODUCT + CHANNEL + DATE (Transactional Link)</strong> &mdash; every purchase event. The Link Satellite holds quantity, price, currency, promotion code, and payment method.</li>
+        <li><strong>Effectivity Satellite on CUSTOMER-STORE Link</strong> &mdash; tracks which store a customer is &ldquo;associated with&rdquo; (e.g., their preferred store for loyalty purposes). Changes when they move or switch stores.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Retail: 90-Day Customer 360 Query via PIT + Bridge</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Customer 360: all purchase and return events in the last 90 days</span>
+<span class="cm">-- Bridge table pre-joins CUSTOMER to all related ORDER and RETURN links</span>
+<span class="kw">SELECT</span>
+    c.EMAIL                         <span class="kw">AS</span> CUSTOMER_EMAIL,
+    p.PRODUCT_NAME, p.GTIN,
+    ch.CHANNEL_NAME,
+    ev.EVENT_TYPE,                  <span class="cm">-- PURCHASE or RETURN</span>
+    ev.EVENT_DATE,
+    ev.QUANTITY, ev.NET_AMOUNT_USD
+
+<span class="kw">FROM</span>  BIZ_VAULT.BRIDGE_CUSTOMER_EVENTS  br
+<span class="kw">JOIN</span>  MART.DIM_CUSTOMER                 c   <span class="kw">ON</span> c.CUSTOMER_HK  <span class="op">=</span> br.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">JOIN</span>  MART.DIM_PRODUCT                  p   <span class="kw">ON</span> p.PRODUCT_HK   <span class="op">=</span> br.<span class="hub">HUB_PRODUCT_HK</span>
+<span class="kw">JOIN</span>  MART.DIM_CHANNEL                  ch  <span class="kw">ON</span> ch.CHANNEL_HK  <span class="op">=</span> br.<span class="hub">HUB_CHANNEL_HK</span>
+<span class="kw">JOIN</span>  <span class="sat">SAT_L_CUSTOMER_EVENTS_DETAIL</span>      ev  <span class="kw">ON</span> ev.LINK_HK     <span class="op">=</span> br.LINK_HK
+                                                <span class="kw">AND</span> ev.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+<span class="kw">WHERE</span> c.EMAIL <span class="op">=</span> <span class="str">'jane.doe@email.com'</span>
+  <span class="kw">AND</span> ev.EVENT_DATE <span class="op">&gt;=</span> <span class="fn">DATEADD</span>(<span class="str">'day'</span>, <span class="op">-</span><span class="num">90</span>, <span class="fn">CURRENT_DATE</span>())
+<span class="kw">ORDER BY</span> ev.EVENT_DATE <span class="kw">DESC</span>;</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Outcomes</h3>
+      <ul>
+        <li>Customer 360 query latency reduced from 4 days (manual) to 2 seconds (pre-computed Bridge table).</li>
+        <li>Inventory visibility achieved across all 12 ERP instances via a single HUB_PRODUCT + SAT_PRODUCT_INVENTORY_POSITION satellite loaded from each region&rsquo;s ERP independently.</li>
+        <li>A/B test attribution now uses Effectivity Satellites to track which experiment variant a customer was in during any specific date range &mdash; enabling accurate incremental revenue measurement.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: HEALTHCARE (HIPAA) CASE STUDY
+       ============================================================ -->
+  <article class="concept" data-topic="healthcare-case" id="healthcare-case">
+    <p class="concept-num">Concept 03</p>
+    <h2>Healthcare (HIPAA) Case Study</h2>
+
+    <div class="detail">
+      <h3>Scenario: Multi-Hospital Network — Clinical Data Integration</h3>
+      <p>
+        A 12-hospital network operates across 3 states with separate EHR systems (Epic, Cerner, Meditech). Patients frequently visit different hospitals in the network. Clinical outcomes research requires linking patient encounters, diagnoses, medications, and lab results across facilities &mdash; but HIPAA mandates strict data access controls and audit logging of every PHI access.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>DV2 + HIPAA: The Data Vault Advantage</h3>
+      <ul>
+        <li><strong>PHI isolation in dedicated Satellites.</strong> All Protected Health Information (name, SSN, date of birth, medical record number) is separated into <code>SAT_PATIENT_PHI</code>. All clinical data (diagnoses, medications, lab values) is in separate satellites. This enables column-level access control: clinical researchers get the clinical satellites without PHI, while identity resolution gets the PHI satellite without clinical payload.</li>
+        <li><strong>Hash Key as de-identifier.</strong> The HUB_PATIENT_HK is the MD5 of the Master Patient Index number &mdash; a non-reversible identifier. Clinical research datasets use only the HK, never the source patient ID. Re-identification requires access to the HUB table (separately controlled).</li>
+        <li><strong>Full audit trail of PHI access.</strong> An <code>AUDIT_SATELLITE</code> pattern records every query that touches PHI satellites, including the requesting user, timestamp, and purpose code. This satisfies HIPAA&rsquo;s minimum-necessary-access audit requirement without additional tooling.</li>
+        <li><strong>Right-to-access response time.</strong> When a patient requests their complete record under HIPAA right-of-access, a single query against all satellites for their HK retrieves the full history in seconds &mdash; previously a 3&ndash;5 day manual process across 3 EHR systems.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; HIPAA: PHI-isolated Satellite with Row-Level Security</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- PHI Satellite: access controlled to identity team only</span>
+<span class="cm">-- Clinical research views NEVER join to this table</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_PATIENT_PHI</span> (
+    <span class="hub">HUB_PATIENT_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="cm">-- PHI columns: role-secured; masked in non-prod via dynamic masking policy</span>
+    FIRST_NAME       <span class="typ">VARCHAR(200)</span>,
+    LAST_NAME        <span class="typ">VARCHAR(200)</span>,
+    DATE_OF_BIRTH    <span class="typ">DATE</span>,
+    SSN_HASH         <span class="typ">CHAR(64)</span>,   <span class="cm">-- SHA-256 of SSN — not stored in plaintext</span>
+    MRN              <span class="typ">VARCHAR(50)</span>, <span class="cm">-- Medical Record Number per facility</span>
+    FACILITY_CODE    <span class="typ">CHAR(10)</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_phi <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_PATIENT_HK</span>, <span class="str">LOAD_DATE</span>)
+);
+<span class="cm">-- Snowflake Dynamic Data Masking: clinical role sees masked name</span>
+<span class="kw">CREATE OR REPLACE</span> MASKING POLICY phi_mask_policy AS
+    (val <span class="typ">VARCHAR</span>) <span class="kw">RETURNS</span> <span class="typ">VARCHAR</span> ->
+    <span class="kw">CASE WHEN</span> <span class="fn">CURRENT_ROLE</span>() IN (<span class="str">'PHI_ADMIN'</span>, <span class="str">'IDENTITY_TEAM'</span>) <span class="kw">THEN</span> val
+         <span class="kw">ELSE</span> <span class="str">'***MASKED***'</span>
+    <span class="kw">END</span>;
+ALTER TABLE <span class="sat">SAT_PATIENT_PHI</span> MODIFY COLUMN FIRST_NAME
+    SET MASKING POLICY phi_mask_policy;
+
+<span class="cm">-- Clinical satellite: no PHI — safe for research teams</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_PATIENT_CLINICAL_ENCOUNTER</span> (
+    <span class="hub">HUB_PATIENT_HK</span>   <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>         <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>         <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>     <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    ENCOUNTER_DATE    <span class="typ">DATE</span>         <span class="kw">NOT NULL</span>,
+    ICD10_CODE        <span class="typ">VARCHAR(20)</span>,  <span class="cm">-- diagnosis code</span>
+    ENCOUNTER_TYPE    <span class="typ">VARCHAR(50)</span>,  <span class="cm">-- INPATIENT, OUTPATIENT, EMERGENCY</span>
+    FACILITY_CODE     <span class="typ">CHAR(10)</span>,
+    ATTENDING_PROVIDER_HK <span class="typ">CHAR(32)</span>,<span class="cm">-- FK to HUB_PROVIDER (de-identified)</span>
+    <span class="kw">CONSTRAINT</span> pk_sat_encounter <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_PATIENT_HK</span>, <span class="str">LOAD_DATE</span>)
+);</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: LEGACY DW MIGRATION PLAYBOOK
+       ============================================================ -->
+  <article class="concept" data-topic="migration-playbook" id="migration-playbook">
+    <p class="concept-num">Concept 04</p>
+    <h2>Legacy DW Migration Playbook</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Migrating from a legacy data warehouse to Data Vault is not a &ldquo;big bang&rdquo; cutover &mdash; it&rsquo;s a <strong>parallel run with incremental cutover by subject area</strong>. You keep the old DW running for reports that haven&rsquo;t migrated yet, while the new Data Vault starts ingesting the same sources and delivering mart outputs for migrated subject areas. This way, the business never sees a day with zero reporting.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Six-Phase Migration Playbook</h3>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>Activity</th>
+          <th>Duration (typical)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Discovery</strong></td>
+          <td>Profile source systems, map existing ETL logic, catalogue business rules in legacy transforms</td>
+          <td>4&ndash;6 weeks</td>
+        </tr>
+        <tr>
+          <td><strong>2. Business key analysis</strong></td>
+          <td>Identify all business keys across sources; resolve duplicates; design Hub taxonomy</td>
+          <td>2&ndash;4 weeks</td>
+        </tr>
+        <tr>
+          <td><strong>3. Raw Vault build &amp; historical load</strong></td>
+          <td>Build Hub/Link/SAT DDL; ingest historical data from legacy sources (backfill)</td>
+          <td>6&ndash;12 weeks</td>
+        </tr>
+        <tr>
+          <td><strong>4. Business Vault &amp; mart build</strong></td>
+          <td>Build PIT/Bridge tables; rebuild first subject area as Information Mart</td>
+          <td>4&ndash;8 weeks</td>
+        </tr>
+        <tr>
+          <td><strong>5. Parallel run &amp; reconciliation</strong></td>
+          <td>Run legacy DW and new DV mart simultaneously; reconcile row counts and aggregate values daily</td>
+          <td>4&ndash;6 weeks</td>
+        </tr>
+        <tr>
+          <td><strong>6. Cutover &amp; decommission</strong></td>
+          <td>Switch BI tools to new mart; sunset legacy ETL; decommission old DW per subject area</td>
+          <td>2&ndash;4 weeks per area</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p>
+        <strong>The #1 migration failure mode: migrating business rules from ETL into the Raw Vault.</strong> Legacy ETL often contains decades of accumulated business logic (cleansing, derivations, source prioritisation) embedded in the transformation code. When migrating, document each business rule from the legacy ETL, then explicitly put it in either: (a) the Business Vault Computed Satellite layer, or (b) the Information Mart query. Never let it slip into the Raw Vault staging code.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Reconciliation Query: Legacy DW vs DV Mart (Daily Check)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Daily reconciliation: compare legacy DW FACT_SALES to new MART.FACT_SALES</span>
+<span class="cm">-- Run as a pipeline check during parallel run phase</span>
+<span class="kw">WITH</span> legacy_totals <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        <span class="fn">DATE_TRUNC</span>(<span class="str">'day'</span>, TRANSACTION_DATE)  <span class="kw">AS</span> SALE_DATE,
+        <span class="fn">COUNT</span>(*)                               <span class="kw">AS</span> ROW_COUNT,
+        <span class="fn">SUM</span>(NET_AMOUNT)                        <span class="kw">AS</span> TOTAL_SALES
+    <span class="kw">FROM</span> LEGACY_DW.FACT_SALES
+    <span class="kw">WHERE</span> TRANSACTION_DATE <span class="op">=</span> <span class="fn">CURRENT_DATE</span>() <span class="op">-</span> <span class="num">1</span>
+    <span class="kw">GROUP BY</span> <span class="num">1</span>
+),
+dv_totals <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        <span class="fn">DATE_TRUNC</span>(<span class="str">'day'</span>, ORDER_DATE)         <span class="kw">AS</span> SALE_DATE,
+        <span class="fn">COUNT</span>(*)                               <span class="kw">AS</span> ROW_COUNT,
+        <span class="fn">SUM</span>(NET_SALES_AMOUNT)                  <span class="kw">AS</span> TOTAL_SALES
+    <span class="kw">FROM</span> MART.FACT_SALES
+    <span class="kw">WHERE</span> ORDER_DATE <span class="op">=</span> <span class="fn">CURRENT_DATE</span>() <span class="op">-</span> <span class="num">1</span>
+    <span class="kw">GROUP BY</span> <span class="num">1</span>
+)
+<span class="kw">SELECT</span>
+    l.SALE_DATE,
+    l.ROW_COUNT          <span class="kw">AS</span> LEGACY_ROWS,
+    d.ROW_COUNT          <span class="kw">AS</span> DV_ROWS,
+    l.ROW_COUNT <span class="op">-</span> d.ROW_COUNT              <span class="kw">AS</span> ROW_DELTA,
+    l.TOTAL_SALES        <span class="kw">AS</span> LEGACY_SALES,
+    d.TOTAL_SALES        <span class="kw">AS</span> DV_SALES,
+    l.TOTAL_SALES <span class="op">-</span> d.TOTAL_SALES           <span class="kw">AS</span> SALES_DELTA,
+    <span class="fn">ABS</span>(l.TOTAL_SALES <span class="op">-</span> d.TOTAL_SALES) /
+        <span class="fn">NULLIF</span>(l.TOTAL_SALES, <span class="num">0</span>) <span class="op">*</span> <span class="num">100</span>       <span class="kw">AS</span> PCT_VARIANCE
+<span class="kw">FROM</span> legacy_totals l
+<span class="kw">FULL OUTER JOIN</span> dv_totals d <span class="kw">USING</span> (SALE_DATE)
+<span class="kw">WHERE</span> <span class="fn">ABS</span>(l.TOTAL_SALES <span class="op">-</span> d.TOTAL_SALES) / <span class="fn">NULLIF</span>(l.TOTAL_SALES, <span class="num">0</span>) <span class="op">*</span> <span class="num">100</span> <span class="op">&gt;</span> <span class="num">0.01</span>;
+<span class="cm">-- Alert if variance exceeds 0.01% — investigate root cause before cutover</span></pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: DATA GOVERNANCE WITH DATA VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="data-governance" id="data-governance">
+    <p class="concept-num">Concept 05</p>
+    <h2>Data Governance with Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Data Governance answers: <em>&ldquo;Who owns this data? Where did it come from? What does it mean? Who can access it? How accurate is it?&rdquo;</em> Data Vault&rsquo;s architecture makes governance easier than any other pattern because <strong>every row carries its provenance</strong> (RECORD_SOURCE + LOAD_DATE), <strong>nothing is ever deleted</strong>, and <strong>business rules are explicit and documented</strong> in the Business Vault layer &mdash; not hidden in opaque ETL scripts.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>How Data Vault Supports Each Governance Domain</h3>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Governance Domain</th>
+          <th>DV Mechanism</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Data Lineage</strong></td>
+          <td><code>RECORD_SOURCE</code> on every row traces data to its source system. Combined with LOAD_DATE, you can reconstruct exactly which extract batch a value came from.</td>
+        </tr>
+        <tr>
+          <td><strong>Data Ownership</strong></td>
+          <td>Each Hub is owned by a domain team. Satellites are owned by the team responsible for the source system that feeds them. Bridge/PIT ownership lies with the Business Vault team.</td>
+        </tr>
+        <tr>
+          <td><strong>Data Quality</strong></td>
+          <td>Error Mart (Concept 04 of Module 06) captures all DQ violations per source, per batch. DQ metrics are queryable, trendable, and SLA-able.</td>
+        </tr>
+        <tr>
+          <td><strong>Data Retention / GDPR</strong></td>
+          <td>Erasure requests are handled by inserting a &ldquo;tombstone&rdquo; record in a dedicated Erasure Satellite. Mart queries filter this out. Raw Vault retains the technical audit trail without PII exposure in reporting.</td>
+        </tr>
+        <tr>
+          <td><strong>Business Glossary</strong></td>
+          <td>Hub names and business key definitions should map 1:1 to the organisation&rsquo;s data catalog. The Hub name IS the canonical business entity name.</td>
+        </tr>
+        <tr>
+          <td><strong>Access Control</strong></td>
+          <td>PHI, PCI, or confidential satellites are secured at the table level. Mart views use dynamic data masking. Bridge tables control which entity combinations are visible per role.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>GDPR Right to Erasure: The Tombstone Pattern</h3>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; GDPR Erasure: Tombstone Satellite Insert + Mart Filter</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- GDPR erasure satellite: records that a subject has exercised right-to-erasure</span>
+<span class="cm">-- Raw Vault rows are NEVER deleted — tombstone controls mart visibility</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_GDPR_ERASURE</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    ERASURE_DATE     <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    ERASURE_REQUEST_ID <span class="typ">VARCHAR(100)</span>,         <span class="cm">-- ticket/case reference</span>
+    ERASURE_SCOPE    <span class="typ">VARCHAR(50)</span>  <span class="kw">DEFAULT</span> <span class="str">'FULL'</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_gdpr <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+);
+
+<span class="cm">-- Mart view: automatically excludes erased customers</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> MART.DIM_CUSTOMER_GDPR_SAFE <span class="kw">AS</span>
+<span class="kw">SELECT</span> c.*
+<span class="kw">FROM</span> MART.DIM_CUSTOMER c
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_GDPR_ERASURE</span> er
+    <span class="kw">WHERE</span> er.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> c.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> er.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+      <span class="kw">AND</span> er.ERASURE_DATE <span class="op">&lt;=</span> <span class="fn">CURRENT_TIMESTAMP</span>()
+);</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A — CASE STUDIES
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A: Enterprise Scenarios</h2>
+
+    <p class="interview-section-label">Architect-Level Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does Data Vault handle GDPR right-to-erasure without violating the insert-only principle?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>GDPR requires that PII be erased upon a valid data subject request. Data Vault&rsquo;s insert-only principle means we cannot DELETE or UPDATE existing rows. The reconciliation is done through the <strong>Tombstone pattern</strong>:</p>
+          <p><strong>(1) Raw Vault preservation.</strong> The raw data rows are never deleted. They remain as an audit trail of what was held. This satisfies the regulatory need to prove you once held this data (some regulations require proof of deletion, not proof of never having held data).</p>
+          <p><strong>(2) Erasure Satellite insert.</strong> A new row is inserted into <code>SAT_CUSTOMER_GDPR_ERASURE</code> marking the customer as erased with a timestamp and case reference. This is an INSERT, not a DELETE &mdash; preserving the DV principle.</p>
+          <p><strong>(3) Mart-layer filtering.</strong> All Information Mart views and Data Products add a <code>NOT EXISTS (SELECT 1 FROM SAT_CUSTOMER_GDPR_ERASURE WHERE ...)</code> filter. Erased customers are invisible to all downstream consumers immediately after the tombstone insert.</p>
+          <p><strong>(4) Physical deletion where required.</strong> For regulatory regimes that require physical deletion (not just visibility suppression), a separate GDPR purge process runs nightly to DELETE the PHI-containing satellite rows (SAT_CUSTOMER_PHI, SAT_CUSTOMER_CONTACT) for tombstoned customers, while leaving non-PHI satellites and Hub rows intact for referential integrity and aggregate audit purposes.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Same-As Link and when do you use it instead of a surrogate master key?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A Same-As Link is a self-referencing Link on a single Hub, recording that two different Hub rows represent the same real-world entity. It is used when the <strong>same entity appears in multiple source systems with different business keys</strong> and you cannot create a single canonical master key at load time.</p>
+          <p>When to use Same-As Link:</p>
+          <p><strong>(1) Business key equivalence is discovered over time.</strong> You load 1M customer records from CRM and 900K from ERP. The matching process (MDM, probabilistic matching) runs separately and identifies that 850K CRM rows = 850K ERP rows for the same person. The Same-As Link records these matches without modifying any existing Hub rows.</p>
+          <p><strong>(2) Match quality is uncertain and revocable.</strong> The Same-As Link Satellite carries a MATCH_SCORE and MATCH_METHOD. If a match is later found to be wrong, you insert a new EFF SAT row closing the Same-As relationship &mdash; the false match is preserved in history, the correction is applied going forward.</p>
+          <p>When to use a surrogate master key instead:</p>
+          <p>If you control the master key at load time &mdash; for example, an MDM system assigns a canonical GLOBAL_CUSTOMER_ID before data reaches the vault &mdash; use that as the Hub business key from day one. The Same-As Link is for post-hoc identity resolution when the master key is not available at source extract time.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the most important thing to document during a legacy DW migration, and why?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>The business rules embedded in the legacy ETL code.</strong></p>
+          <p>Legacy ETL systems typically contain 10&ndash;20 years of accumulated transformations: source priority rules (&ldquo;if CRM says X and ERP says Y, prefer CRM&rdquo;), data cleansing logic (&ldquo;if COUNTRY_CODE = &lsquo;GB&rsquo;, normalise to &lsquo;GBR&rsquo;&rdquo;), imputation rules (&ldquo;if customer birthdate is NULL, set to 1900-01-01&rdquo;), and derived metrics (&ldquo;LIFETIME_VALUE = sum of all orders minus returns&rdquo;). These rules are often undocumented and only exist as SQL transformations in SSIS packages, Informatica mappings, or hand-written Python scripts.</p>
+          <p>If these rules are not extracted and explicitly placed in the new DV architecture, two things happen: (1) they are silently re-implemented in the Raw Vault staging code, violating the zero-business-rules principle, or (2) they are lost entirely, causing mart outputs to diverge from legacy DW outputs during reconciliation &mdash; with no clear explanation of why.</p>
+          <p>Document each business rule: what it does, which source column it transforms, why it exists (the business justification), and where it should live in the new architecture (Business Vault Computed Satellite or Information Mart). This documentation is also the basis for the reconciliation test suite used in the parallel run phase.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 13 Key Takeaways</h3>
+      <ul>
+        <li>Banking: the Same-As Link resolves multi-system identity without modifying existing Hub rows. Regulatory requirements (BCBS 239, GDPR) are naturally satisfied by DV&rsquo;s insert-only audit trail and RECORD_SOURCE lineage on every row.</li>
+        <li>Retail: the Bridge table pre-computes the Customer-to-Event relationship across channels, reducing a 4-day manual 360&deg; query to a 2-second mart query. Effectivity Satellites track experiment cohort membership for accurate A/B attribution.</li>
+        <li>Healthcare: isolate PHI in dedicated Satellites with dynamic data masking. Use the Hash Key as the de-identifier for clinical research. The Satellite history enables HIPAA right-of-access responses in seconds, not days.</li>
+        <li>Legacy migration: use a 6-phase playbook with parallel run and daily reconciliation. The #1 failure mode is migrating business rules into the Raw Vault &mdash; document every ETL rule and explicitly assign it to Business Vault or mart layers.</li>
+        <li>Data Governance: DV provides natural lineage (RECORD_SOURCE + LOAD_DATE), ownership by domain (Hub = entity = owner team), and GDPR erasure via the Tombstone pattern &mdash; never deleting Raw Vault history, but filtering erased subjects from all mart outputs.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module12.html">&#8592; Module 12: Dimensional Modeling</a>
+  <a href="module14.html" class="next">Module 14: Interview Mastery &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 13 of 14 &mdash; Enterprise Case Studies
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('13', 6);</script>
+</body>
+</html>

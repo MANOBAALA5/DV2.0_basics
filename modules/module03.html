@@ -1,0 +1,638 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Hub Design Deep Dive — master the anatomy, business key selection, SQL load patterns, multi-source loading, and anti-patterns for Data Vault 2.0 Hubs.">
+<title>Module 03: Hub Design Deep Dive | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html" class="active">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">03</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)">
+      Intermediate &nbsp;&middot;&nbsp; Module 03 of 14
+    </span>
+    <h1>Hub Design<br><em style="color:var(--gold)">Deep Dive</em></h1>
+    <p class="mod-hero-desc">
+      Hubs are the identity layer of Data Vault. Get this right and the whole vault stays clean and queryable for decades. Get it wrong and you&rsquo;ll be fixing it forever.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~40 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Intermediate</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;02</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: HUB ANATOMY & REQUIRED COLUMNS
+       ============================================================ -->
+  <article class="concept" data-topic="hub-anatomy" id="hub-anatomy">
+    <p class="concept-num">Concept 01</p>
+    <h2>Hub Anatomy &amp; Required Columns</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        A Hub is the simplest table in Data Vault &mdash; but that simplicity is <strong>intentional</strong>. It stores ONLY the unique business identifiers for one type of real-world entity. Nothing else. The discipline of keeping hubs lean is what makes the whole architecture work.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Four Required Columns</h3>
+      <p>Every Hub in every Data Vault implementation has exactly four mandatory columns. No exceptions. No extras in the Hub itself &mdash; everything descriptive goes to a Satellite.</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>HUB_{ENTITY}_HK</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>Primary key. MD5 hash of normalized BK. <strong>Never null.</strong></td>
+        </tr>
+        <tr>
+          <td><code>{ENTITY}_BK</code></td>
+          <td><code>VARCHAR</code></td>
+          <td>The actual business key. Indexed. <strong>Never null.</strong></td>
+        </tr>
+        <tr>
+          <td><code>LOAD_DATE</code></td>
+          <td><code>TIMESTAMP</code></td>
+          <td>When first seen by the vault. <strong>Never updated.</strong></td>
+        </tr>
+        <tr>
+          <td><code>RECORD_SOURCE</code></td>
+          <td><code>VARCHAR(100)</code></td>
+          <td>Which system first saw this entity. Enables lineage.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>Naming Conventions</h3>
+      <ul>
+        <li><strong>Hub tables:</strong> <code>HUB_{ENTITY}</code> &mdash; e.g., <code>HUB_CUSTOMER</code>, <code>HUB_PRODUCT</code>, <code>HUB_ORDER</code></li>
+        <li><strong>Hash key column:</strong> <code>HUB_{ENTITY}_HK</code></li>
+        <li><strong>Business key column:</strong> <code>{ENTITY}_BK</code></li>
+        <li><strong>Load date column:</strong> <code>LOAD_DATE</code> or <code>LDTS</code> (pick one, use consistently)</li>
+        <li><strong>Record source column:</strong> <code>RECORD_SOURCE</code> or <code>RSRC</code> (pick one, use consistently)</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; HUB_PRODUCT with all conventions applied</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- HUB_PRODUCT: stores unique product business keys only</span>
+<span class="cm">-- Nothing descriptive here — name, price, category go in Satellites</span>
+<span class="kw">CREATE TABLE</span> <span class="hub">HUB_PRODUCT</span> (
+    <span class="hub">HUB_PRODUCT_HK</span>   <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- MD5 of UPPER(TRIM(PRODUCT_BK))</span>
+    <span class="str">PRODUCT_BK</span>       <span class="typ">VARCHAR(50)</span>   <span class="kw">NOT NULL</span>,  <span class="cm">-- e.g. ProductSKU or GTIN barcode</span>
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- when first seen; never updated</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,  <span class="cm">-- e.g. 'ERP.ProductMaster'</span>
+    <span class="kw">CONSTRAINT</span> pk_hub_product <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_PRODUCT_HK</span>)
+);
+
+<span class="cm">-- Recommended: index on BK for lookup performance</span>
+<span class="kw">CREATE UNIQUE INDEX</span> uix_hub_product_bk
+    <span class="kw">ON</span> <span class="hub">HUB_PRODUCT</span> (<span class="str">PRODUCT_BK</span>);</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128270;</span>
+      <div>
+        <p><strong>What goes IN a Hub vs what does NOT:</strong></p>
+        <p style="margin-top:0.6rem">
+          <span style="color:var(--green);font-weight:600">&#10003; Goes in Hub:</span> Hash Key &nbsp;&bull;&nbsp; Business Key &nbsp;&bull;&nbsp; Load Date &nbsp;&bull;&nbsp; Record Source
+        </p>
+        <p style="margin-top:0.4rem">
+          <span style="color:var(--coral);font-weight:600">&#10007; Does NOT go in Hub:</span> Product Name &nbsp;&bull;&nbsp; Price &nbsp;&bull;&nbsp; Category &nbsp;&bull;&nbsp; Status &nbsp;&bull;&nbsp; Description &mdash; all of these go in <strong>Satellites</strong>.
+        </p>
+      </div>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: CHOOSING VALID BUSINESS KEYS
+       ============================================================ -->
+  <article class="concept" data-topic="choosing-bk" id="choosing-bk">
+    <p class="concept-num">Concept 02</p>
+    <h2>Choosing Valid Business Keys</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        The most critical design decision in all of Data Vault is &ldquo;what is the business key for this hub?&rdquo; It must be something the <strong>business uses to talk about the entity</strong> &mdash; not a database auto-increment ID. The test: would a customer service rep type it into a search box? Would it appear on an invoice?
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Business Key Decision Framework</h3>
+      <p><strong>Ask the business analyst, not the DBA:</strong> &ldquo;How do you look up a customer? What do you type in the search box?&rdquo;</p>
+      <ul>
+        <li><strong>Test 1 &mdash; Business process:</strong> Is it used in emails, invoices, support tickets, or conversations with the customer?</li>
+        <li><strong>Test 2 &mdash; Meaningful when printed:</strong> Would the key be meaningful if it appeared on a report or was sent in an email to a partner?</li>
+        <li><strong>Test 3 &mdash; Uniqueness:</strong> Does it uniquely identify exactly one instance of this entity type?</li>
+      </ul>
+      <p>If all three tests pass, you have a valid business key. If any test fails, dig deeper.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Common Business Key Examples by Entity</h3>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Entity</th>
+          <th>Common Business Keys</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Customer</strong></td>
+          <td><code>CustomerID</code>, <code>TaxID</code>, <code>SSN</code>, <code>Email</code></td>
+          <td>Depends on industry. Banking uses TaxID; e-commerce often uses Email.</td>
+        </tr>
+        <tr>
+          <td><strong>Product</strong></td>
+          <td><code>ProductSKU</code>, <code>GTIN</code> / <code>EAN</code> barcode, <code>PartNumber</code></td>
+          <td>GTIN is globally unique; SKU is only unique within one brand.</td>
+        </tr>
+        <tr>
+          <td><strong>Account</strong></td>
+          <td><code>AccountNumber</code>, <code>IBAN</code>, <code>PolicyNumber</code></td>
+          <td>IBAN for banking; PolicyNumber for insurance.</td>
+        </tr>
+        <tr>
+          <td><strong>Employee</strong></td>
+          <td><code>EmployeeID</code>, <code>NationalID</code></td>
+          <td>NationalID is stable; EmployeeID can be reassigned if retirees return.</td>
+        </tr>
+        <tr>
+          <td><strong>Order</strong></td>
+          <td><code>OrderNumber</code>, <code>InvoiceNumber</code></td>
+          <td>Watch for systems that reuse order numbers across fiscal years.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <div>
+        <p><strong>What NOT to use as a Business Key:</strong></p>
+        <ul style="margin-top:0.6rem;padding-left:1.2rem">
+          <li style="font-size:0.88rem;line-height:1.7;color:var(--ink-2);margin-bottom:0.3rem">Database <code>IDENTITY</code> / <code>SEQUENCE</code> columns with no business meaning</li>
+          <li style="font-size:0.88rem;line-height:1.7;color:var(--ink-2);margin-bottom:0.3rem">Row GUIDs generated by an ORM that business users never see</li>
+          <li style="font-size:0.88rem;line-height:1.7;color:var(--ink-2);margin-bottom:0.3rem">Composite primary keys that include technical timestamp fields</li>
+          <li style="font-size:0.88rem;line-height:1.7;color:var(--ink-2)">Any key that can be reused or reassigned by the source system without tracking</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="detail">
+      <h3>The Composite Business Key Pattern</h3>
+      <p>Sometimes no single column uniquely identifies an entity. When a legacy system reuses order numbers across fiscal years, you need <em>both</em> fields to make the key unique. The hash key is derived from the combined value, but both columns are stored in the Hub.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Composite BK pattern for recycled keys</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- When you need multiple columns to identify one entity</span>
+<span class="cm">-- Hub for Historical Sales Transactions</span>
+<span class="cm">-- (legacy system reuses order numbers by year)</span>
+<span class="kw">CREATE TABLE</span> <span class="hub">HUB_SALES_TRANSACTION</span> (
+    <span class="hub">HUB_SALES_TRANSACTION_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Composite BK: both parts together form the unique identifier</span>
+    <span class="str">FISCAL_YEAR</span>               <span class="typ">CHAR(4)</span>       <span class="kw">NOT NULL</span>,
+    <span class="str">TRANSACTION_NUMBER</span>        <span class="typ">VARCHAR(20)</span>   <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>                 <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>             <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_hub_st <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_SALES_TRANSACTION_HK</span>)
+);
+
+<span class="cm">-- Hash key computation (done in staging layer):</span>
+<span class="cm">-- MD5(FISCAL_YEAR || '||' || TRANSACTION_NUMBER)</span>
+<span class="cm">-- The '||' separator prevents '2024' + '1234' == '202' + '41234'</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(FISCAL_YEAR)) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(TRANSACTION_NUMBER))
+    ) <span class="kw">AS</span> <span class="hub">HUB_SALES_TRANSACTION_HK</span>,
+    FISCAL_YEAR,
+    TRANSACTION_NUMBER,
+    LOAD_DATE,
+    RECORD_SOURCE
+<span class="kw">FROM</span> STG_LEGACY_TRANSACTIONS;</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Separator discipline:</strong> Always use a fixed multi-character separator (e.g., <code>'||'</code> or <code>'~'</code>) between composite key parts during hashing. A single <code>'|'</code> can still collide if key values contain that character. Document your separator standard in your metadata and never change it.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: HUB SQL LOAD PATTERNS
+       ============================================================ -->
+  <article class="concept" data-topic="hub-sql" id="hub-sql">
+    <p class="concept-num">Concept 03</p>
+    <h2>Hub SQL Load Patterns</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Loading a Hub is the simplest ETL operation in Data Vault: take the incoming business keys from staging, hash them, and <strong>insert only the ones you haven&rsquo;t seen before</strong>. That&rsquo;s it. One <code>INSERT...SELECT</code> with a <code>NOT EXISTS</code> filter. The Hub never gets updated. You never delete from it. If the BK is already there, you move on.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Pattern 1: INSERT...SELECT with NOT EXISTS (Preferred)</h3>
+      <p>This is the canonical Data Vault Hub load. It is idempotent &mdash; running it twice in the same batch produces the same result. Each row in staging either finds its hash key already in the Hub (and skips) or doesn&rsquo;t (and inserts).</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Canonical Hub load from CRM staging</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ================================================================</span>
+<span class="cm">-- LOAD: HUB_CUSTOMER from CRM staging</span>
+<span class="cm">-- Pattern: INSERT new BKs only (idempotent)</span>
+<span class="cm">-- ================================================================</span>
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_CUSTOMER</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="str">CUSTOMER_BK</span>,
+    <span class="str">LOAD_DATE</span>,
+    <span class="str">RECORD_SOURCE</span>
+)
+<span class="kw">SELECT</span>
+    stg.<span class="hub">HUB_CUSTOMER_HK</span>,    <span class="cm">-- pre-computed in staging layer</span>
+    stg.<span class="str">CUSTOMER_BK</span>,
+    stg.<span class="str">LOAD_DATE</span>,
+    stg.<span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span> STG_CRM_CUSTOMER stg
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="cm">-- Only insert if this hash key has never been seen before</span>
+    <span class="kw">SELECT</span> <span class="num">1</span>
+    <span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> hub
+    <span class="kw">WHERE</span> hub.<span class="hub">HUB_CUSTOMER_HK</span> = stg.<span class="hub">HUB_CUSTOMER_HK</span>
+);</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Why pre-compute hash keys in staging?</strong> Computing MD5 inside the Hub load SQL works, but if the same BK arrives from multiple staging tables in the same batch, you&rsquo;ll compute the hash multiple times. Pre-computing in staging means the hash is computed exactly once, stored in a <code>STG_*</code> column, and reused everywhere. It also makes debugging easier &mdash; you can inspect <code>STG_CRM_CUSTOMER.HUB_CUSTOMER_HK</code> directly.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Pattern 2: MERGE (Alternative &mdash; Use with Caution)</h3>
+      <p>MERGE is syntactically cleaner but harder to debug when things go wrong. More critically, a MERGE with <code>WHEN MATCHED THEN UPDATE</code> would violate Data Vault&rsquo;s insert-only rules. Only the <code>WHEN NOT MATCHED THEN INSERT</code> branch is acceptable.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; MERGE alternative (acceptable, with caveats)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Alternative: MERGE (use with caution — harder to debug)</span>
+<span class="kw">MERGE INTO</span> <span class="hub">HUB_CUSTOMER</span> <span class="kw">AS</span> target
+<span class="kw">USING</span> STG_CRM_CUSTOMER <span class="kw">AS</span> source
+    <span class="kw">ON</span> target.<span class="hub">HUB_CUSTOMER_HK</span> = source.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">WHEN NOT MATCHED THEN</span>
+    <span class="kw">INSERT</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>)
+    <span class="kw">VALUES</span> (source.<span class="hub">HUB_CUSTOMER_HK</span>, source.<span class="str">CUSTOMER_BK</span>,
+            source.<span class="str">LOAD_DATE</span>, source.<span class="str">RECORD_SOURCE</span>);
+
+<span class="cm">-- CRITICAL: Never add WHEN MATCHED THEN UPDATE to a Hub load.</span>
+<span class="cm">-- Updating Hub rows violates DV insert-only rules and destroys</span>
+<span class="cm">-- your audit trail. Only WHEN NOT MATCHED INSERT is acceptable.</span></pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>INSERT...SELECT preferred for auditability:</strong> With <code>NOT EXISTS</code>, the rejected rows are visible in staging &mdash; you can count them, log them, and report them. MERGE hides the rejection logic inside the engine. On large tables, <code>NOT EXISTS</code> with a hash key index is typically equally fast, and the transparency is worth it.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: MULTI-SOURCE HUB LOADING
+       ============================================================ -->
+  <article class="concept" data-topic="multi-source" id="multi-source">
+    <p class="concept-num">Concept 04</p>
+    <h2>Multi-Source Hub Loading</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Real enterprises have multiple systems that all know about &ldquo;customers&rdquo; &mdash; CRM, ERP, loyalty platform, website, and more. The Hub can receive customer records from <strong>all of them</strong>. Each source loads into the same Hub table with its own <code>RECORD_SOURCE</code> tag. The <em>earliest arrival</em> for any given business key &ldquo;wins&rdquo; the Hub row, but all source records still load successfully via the NOT EXISTS check.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Staging Union Pattern</h3>
+      <p>Instead of running separate load jobs for each source, you can UNION ALL the staging tables and load everything in a single pass. This is more efficient and ensures all sources compete on a level playing field for the &ldquo;first arrival&rdquo; honour.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Load HUB_CUSTOMER from 3 source systems in one pass</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Load HUB_CUSTOMER from 3 source systems in one pass</span>
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_CUSTOMER</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>)
+<span class="kw">SELECT</span> <span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span> (
+    <span class="cm">-- Source 1: CRM (Salesforce)</span>
+    <span class="kw">SELECT</span> <span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>
+    <span class="kw">FROM</span> STG_CRM_CUSTOMER
+
+    <span class="kw">UNION ALL</span>
+
+    <span class="cm">-- Source 2: ERP (SAP)</span>
+    <span class="kw">SELECT</span> <span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>
+    <span class="kw">FROM</span> STG_ERP_ACCOUNT
+
+    <span class="kw">UNION ALL</span>
+
+    <span class="cm">-- Source 3: E-Commerce Platform</span>
+    <span class="kw">SELECT</span> <span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">CUSTOMER_BK</span>, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>
+    <span class="kw">FROM</span> STG_WEB_USER
+) all_sources
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> hub
+    <span class="kw">WHERE</span> hub.<span class="hub">HUB_CUSTOMER_HK</span> = all_sources.<span class="hub">HUB_CUSTOMER_HK</span>
+);</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#9889;</span>
+      <p><strong>Key insight &mdash; First arrival wins, but nothing is lost:</strong> The Hub doesn&rsquo;t care which source provides the first record. Whoever arrives first &ldquo;claims&rdquo; the Hub row, setting <code>LOAD_DATE</code> and <code>RECORD_SOURCE</code> to that batch. All subsequent sources still load their own Satellites successfully &mdash; <code>SAT_CUSTOMER_FROM_CRM</code>, <code>SAT_CUSTOMER_FROM_ERP</code>, <code>SAT_CUSTOMER_FROM_WEB</code> &mdash; all pointing to the same Hub row via the same hash key. <strong>This is how Data Vault integrates heterogeneous source systems without master data management overhead.</strong> The Hub provides shared identity; the Satellites preserve source-specific context.</p>
+    </div>
+
+    <div class="detail">
+      <h3>SVG Diagram: Multi-Source Hub Integration</h3>
+    </div>
+
+    <div class="diagram">
+      <svg viewBox="0 0 720 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three source systems feeding into a single HUB_CUSTOMER table">
+        <!-- Source boxes -->
+        <rect x="20" y="50" width="140" height="52" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.3)" stroke-width="1.5"/>
+        <text x="90" y="71" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#22d3c8" font-weight="600">STG_CRM_CUSTOMER</text>
+        <text x="90" y="90" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.45)">Salesforce</text>
+
+        <rect x="20" y="134" width="140" height="52" rx="8" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.25)" stroke-width="1.5"/>
+        <text x="90" y="155" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e8b84b" font-weight="600">STG_ERP_ACCOUNT</text>
+        <text x="90" y="174" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.45)">SAP ERP</text>
+
+        <rect x="20" y="218" width="140" height="52" rx="8" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.22)" stroke-width="1.5"/>
+        <text x="90" y="239" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#a78bfa" font-weight="600">STG_WEB_USER</text>
+        <text x="90" y="258" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.45)">E-Commerce</text>
+
+        <!-- Arrows to hub -->
+        <line x1="161" y1="76" x2="290" y2="155" stroke="rgba(34,211,200,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="161" y1="160" x2="290" y2="160" stroke="rgba(232,184,75,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="161" y1="244" x2="290" y2="165" stroke="rgba(167,139,250,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="290,151 283,148 283,154" fill="rgba(238,242,255,0.3)"/>
+        <polygon points="290,156 283,153 283,159" fill="rgba(238,242,255,0.3)"/>
+        <polygon points="290,161 283,158 283,164" fill="rgba(238,242,255,0.3)"/>
+
+        <!-- Hub box -->
+        <rect x="290" y="110" width="150" height="100" rx="10" fill="rgba(34,211,200,0.1)" stroke="rgba(34,211,200,0.5)" stroke-width="2"/>
+        <text x="365" y="137" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#22d3c8" font-weight="700">HUB_CUSTOMER</text>
+        <line x1="305" y1="145" x2="425" y2="145" stroke="rgba(34,211,200,0.2)" stroke-width="1"/>
+        <text x="365" y="161" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(238,242,255,0.5)">HUB_CUSTOMER_HK</text>
+        <text x="365" y="176" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(238,242,255,0.5)">CUSTOMER_BK</text>
+        <text x="365" y="191" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(238,242,255,0.5)">LOAD_DATE · RECORD_SOURCE</text>
+
+        <!-- Arrows to Satellites -->
+        <line x1="441" y1="148" x2="550" y2="80" stroke="rgba(34,211,200,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="441" y1="160" x2="550" y2="160" stroke="rgba(232,184,75,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="441" y1="172" x2="550" y2="240" stroke="rgba(167,139,250,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+        <!-- Satellite boxes -->
+        <rect x="550" y="50" width="150" height="52" rx="8" fill="rgba(34,211,200,0.06)" stroke="rgba(34,211,200,0.2)" stroke-width="1.5"/>
+        <text x="625" y="71" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(34,211,200,0.8)" font-weight="600">SAT_CUST_CRM</text>
+        <text x="625" y="88" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.35)">Salesforce attributes</text>
+
+        <rect x="550" y="134" width="150" height="52" rx="8" fill="rgba(232,184,75,0.06)" stroke="rgba(232,184,75,0.2)" stroke-width="1.5"/>
+        <text x="625" y="155" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(232,184,75,0.8)" font-weight="600">SAT_CUST_ERP</text>
+        <text x="625" y="172" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.35)">SAP account attributes</text>
+
+        <rect x="550" y="218" width="150" height="52" rx="8" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.2)" stroke-width="1.5"/>
+        <text x="625" y="239" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="rgba(167,139,250,0.8)" font-weight="600">SAT_CUST_WEB</text>
+        <text x="625" y="256" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="rgba(238,242,255,0.35)">E-commerce attributes</text>
+
+        <!-- Label -->
+        <text x="360" y="295" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="rgba(238,242,255,0.35)">Shared identity layer — source-specific context in Satellites</text>
+      </svg>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: HUB ANTI-PATTERNS & INTERVIEW Q&A
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 05</p>
+    <h2>Hub Anti-Patterns &amp; Interview Q&amp;A</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Even experienced engineers make Hub mistakes. The most common: <strong>putting descriptive data in the Hub</strong> (it belongs in a Satellite), using technical IDs instead of business keys, and failing to normalize keys consistently before hashing. Know these cold &mdash; they come up in every senior Data Vault interview.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Best Practices vs Common Mistakes</h3>
+    </div>
+
+    <div class="bpm-grid">
+      <div class="bp-box">
+        <h4>&#10003; Best Practices</h4>
+        <ul>
+          <li>One Hub per distinct business entity type</li>
+          <li>Store only BK + four metadata columns in the Hub</li>
+          <li>Pre-compute hash keys in the staging layer, not at Hub load time</li>
+          <li>Apply TRIM/UPPER normalization <em>consistently</em> before hashing &mdash; everywhere, always</li>
+          <li>Filter NULL business keys in staging before they reach the Hub</li>
+          <li>Index the business key column for lookup performance</li>
+        </ul>
+      </div>
+      <div class="mistake-box">
+        <h4>&#10007; Common Mistakes</h4>
+        <ul>
+          <li>Storing descriptive columns (name, address, status) directly in the Hub</li>
+          <li>Using &ldquo;smart&rdquo; keys that encode data (e.g., &ldquo;NY-2024-00143&rdquo; encoding state + year + seq)</li>
+          <li>Using composite keys in the Hub PK instead of hashing them into a single HK</li>
+          <li>Updating Hub rows when a source system &ldquo;changes&rdquo; the business key</li>
+          <li>Inconsistent normalization (some loads TRIM, some don&rsquo;t) &mdash; causes phantom duplicate Hub rows</li>
+          <li>Allowing NULL business keys to reach the Hub</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="interview-section-label">Hub Design &mdash; Interview Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          What happens when a Hub receives the same business key from two different source systems?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Both source systems load into the same Hub table. The <strong>first to arrive</strong> creates the Hub row &mdash; setting <code>LOAD_DATE</code> to the first batch timestamp and <code>RECORD_SOURCE</code> to the first system. The second system&rsquo;s load hits the <code>NOT EXISTS</code> filter and <strong>skips the insert</strong>.</p>
+          <p>However, both systems will successfully load their own Satellite data (<code>SAT_CUSTOMER_FROM_CRM</code>, <code>SAT_CUSTOMER_FROM_ERP</code>) pointing to the <em>same Hub row</em> via the same hash key. This is exactly how Data Vault achieves multi-source integration &mdash; <strong>shared Hub identity, source-specific satellite context</strong>. The Hub&rsquo;s <code>RECORD_SOURCE</code> tells you who first introduced this entity to the vault, not who &ldquo;owns&rdquo; it.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          Why shouldn&rsquo;t you put descriptive columns in a Hub?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Hubs must be insert-only, but descriptive data changes over time. If you put a customer&rsquo;s name in the Hub, you&rsquo;d need to <strong>UPDATE the Hub when the name changes</strong> &mdash; violating the insert-only principle. Worse, you&rsquo;d lose the history of what the name was before the update.</p>
+          <p>Satellites exist precisely to hold this changing context while preserving full history. Every time a name changes, a new Satellite row is inserted with a new <code>LOAD_DATE</code>, and the old row remains permanently. A Hub with descriptive data is a sign the designer is <strong>conflating the Hub pattern with a traditional dimension table</strong>.</p>
+          <p>The practical consequence: once you put a descriptive column in a Hub and data starts loading, you have no clean way to remove it without rebuilding the Hub and replaying all loads.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the &ldquo;smart key&rdquo; anti-pattern and why should you avoid it?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A <strong>smart key</strong> (also called an intelligent key) is a business key that encodes information in its structure &mdash; e.g., <code>NY-2024-00143</code> where <code>NY</code> = state, <code>2024</code> = year, <code>00143</code> = sequence number.</p>
+          <p>The anti-pattern: if the business ever restructures the key format (removes the state prefix, changes year format, zero-pads differently), your Hub now contains <strong>two different BK formats for the same entity type</strong>. Hash keys will differ even for logically equivalent entities. You end up with phantom duplicates and broken lineage.</p>
+          <p>The fix is to <strong>parse the meaning out of smart keys during staging</strong> and store the components either as separate Hub attributes in a Satellite, or extract them as distinct Hubs if they represent distinct entities &mdash; not embedded in the BK itself. The BK stored in the Hub should be the raw, uninterpreted value from the source.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          How do you handle a business key that can be reused by the source system?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>This is the <strong>&ldquo;key recycling&rdquo; problem</strong> &mdash; a source system reuses <code>OrderNumber 12345</code> for a completely different order after some period. There are three valid solutions:</p>
+          <p><strong>1. Composite BK with discriminating attribute:</strong> Add <code>ORDER_DATE</code> or <code>FISCAL_YEAR</code> to the BK so each instance is unique: <code>MD5('2023' || '||' || '12345')</code> vs <code>MD5('2024' || '||' || '12345')</code>. Best when the recycled key truly represents a different entity.</p>
+          <p><strong>2. Add SOURCE_SYSTEM to the BK:</strong> If different source systems use the same key space but mean different things, namespace the BK with the source: <code>'CRM' || '||' || CUSTOMER_ID</code>. This prevents cross-system collisions.</p>
+          <p><strong>3. Same-As Link (SAL):</strong> If the recycled key <em>might</em> represent the same real-world entity (e.g., a returning customer getting a new ID), use a SAL to track the succession relationship and let the Business Vault resolve the canonical identity. The right choice depends on whether recycled keys represent the <em>same entity</em> (uncommon &mdash; use SAL) or a <em>different entity</em> with the same ID (common &mdash; use composite BK).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 03 Key Takeaways</h3>
+      <ul>
+        <li>A Hub has exactly four columns: Hash Key (PK), Business Key, Load Date, and Record Source. No descriptive data &mdash; ever. Descriptive attributes belong in Satellites.</li>
+        <li>The business key must be something the business actually uses to identify the entity &mdash; not a database surrogate, ORM GUID, or auto-increment. Ask the analyst, not the DBA.</li>
+        <li>Hub load SQL is always insert-only: <code>INSERT...SELECT</code> with <code>NOT EXISTS</code>. Pre-compute hash keys in staging. Apply TRIM/UPPER normalization consistently or you&rsquo;ll create phantom duplicate rows.</li>
+        <li>Multiple source systems load into the same Hub. The first arrival claims the Hub row; all sources still load their own Satellites successfully. This is how Data Vault achieves multi-source integration without MDM overhead.</li>
+        <li>The three most dangerous Hub anti-patterns are: storing descriptive data in the Hub (violates insert-only), using smart/intelligent keys that encode meaning (breaks when key format changes), and inconsistent normalization before hashing (creates duplicates that are nearly impossible to clean up).</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module02.html">&#8592; Module 02: Core Modeling Concepts</a>
+  <a href="module04.html" class="next">Module 04: Link Design Deep Dive &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 03 of 14 &mdash; Hub Design Deep Dive
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('03', 5);</script>
+</body>
+</html>

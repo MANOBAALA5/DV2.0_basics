@@ -1,0 +1,423 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Master Data Vault 2.0 from beginner to architect level. 14 modules of deep-dive content, SQL examples, interview prep, and real case studies.">
+<meta property="og:title" content="Data Vault 2.0 Mastery — From Beginner to Architect">
+<meta property="og:description" content="14 modules covering every aspect of DV2: modeling, loading, performance, cloud, and enterprise case studies.">
+<meta property="og:type" content="website">
+<title>Data Vault 2.0 Mastery — From Beginner to Architect</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    DV<span class="nav-logo-badge">2.0</span>Mastery
+  </a>
+  <div class="nav-links">
+    <a href="modules/module01.html">Intro</a>
+    <a href="modules/module02.html">Modeling</a>
+    <a href="modules/module03.html">Hubs</a>
+    <a href="modules/module04.html">Links</a>
+    <a href="modules/module05.html">Satellites</a>
+    <a href="modules/module06.html">Raw Vault</a>
+    <a href="modules/module07.html">Biz Vault</a>
+    <a href="modules/module08.html">Performance</a>
+    <a href="modules/module09.html">Advanced</a>
+    <a href="modules/module10.html">Automation</a>
+    <a href="modules/module11.html">Cloud</a>
+    <a href="modules/module12.html">Dimensional</a>
+    <a href="modules/module13.html">Cases</a>
+    <a href="modules/module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- SEARCH DROPDOWN -->
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-backdrop"></div>
+  <div class="hero-glow"></div>
+  <p class="hero-eyebrow anim-fade-up">Enterprise Data Engineering</p>
+  <h1 class="anim-fade-up-1">
+    Master<br><span class="accent-gold">Data Vault</span><br><span class="accent-teal">2.0</span>
+  </h1>
+  <p class="hero-sub anim-fade-up-2">
+    The most complete Data Vault 2.0 learning platform. From core concepts to architect-level design — with SQL, diagrams, case studies, and interview prep.
+  </p>
+  <div class="hero-tags anim-fade-up-3">
+    <span class="hero-tag">14 Modules</span>
+    <span class="hero-tag">100+ SQL Examples</span>
+    <span class="hero-tag">ELI5 Explanations</span>
+    <span class="hero-tag">Interview Q&amp;A</span>
+    <span class="hero-tag">Case Studies</span>
+    <span class="hero-tag">Cloud Patterns</span>
+    <span class="hero-tag">Progress Tracking</span>
+    <span class="hero-tag">Free Forever</span>
+  </div>
+  <div class="hero-actions anim-fade-up-4">
+    <a href="modules/module01.html" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Start Learning
+    </a>
+    <a href="#modules" class="btn-outline">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Browse Modules
+    </a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-num">14</span>
+    <span class="stat-label">Deep-Dive Modules</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">100+</span>
+    <span class="stat-label">SQL Examples</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">200+</span>
+    <span class="stat-label">Interview Q&amp;As</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">4</span>
+    <span class="stat-label">Skill Levels</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">&#8734;</span>
+    <span class="stat-label">Access, Forever Free</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="container">
+    <p class="section-eyebrow">Platform Features</p>
+    <h2 class="section-title">Built for serious learners</h2>
+    <p class="section-sub">Not another surface-level tutorial. Every concept has a full stack: explanation, analogy, SQL, diagrams, and interview context.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">&#129504;</span>
+        <h3 class="feature-title">ELI5 + Deep Dive</h3>
+        <p class="feature-desc">Every concept starts with a plain-English explanation before diving into the technical depth. Build intuition first, then mastery.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128451;</span>
+        <h3 class="feature-title">Production SQL</h3>
+        <p class="feature-desc">Copy-ready SQL with syntax highlighting covering hub loads, link loads, satellite CDC, PIT tables, and bridge table generation.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128202;</span>
+        <h3 class="feature-title">Visual Diagrams</h3>
+        <p class="feature-desc">SVG entity diagrams, architecture flows, and timeline charts that show how DV structures relate and evolve over time.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#127919;</span>
+        <h3 class="feature-title">Progress Tracking</h3>
+        <p class="feature-desc">Automatic progress tracking per module — saved to your browser. See exactly how far you've come through each concept block.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128188;</span>
+        <h3 class="feature-title">Interview Ready</h3>
+        <p class="feature-desc">Every module ends with real interview Q&amp;As sorted by seniority. From entry-level questions to architect-level design problems.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#9729;</span>
+        <h3 class="feature-title">Cloud-First</h3>
+        <p class="feature-desc">Dedicated coverage of Snowflake, BigQuery, and Databricks patterns — the platforms most DV jobs actually require.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#9889;</span>
+        <h3 class="feature-title">No Setup Required</h3>
+        <p class="feature-desc">Fully static — no login, no subscription, no tracking. Open any module and start learning instantly, from any device.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128269;</span>
+        <h3 class="feature-title">Instant Search</h3>
+        <p class="feature-desc">Search across all 14 modules instantly. Find any concept, SQL pattern, or term without leaving your current page.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE GRID -->
+<section class="section" id="modules" style="padding-top:2.5rem; background: var(--bg-2);">
+  <div class="container">
+    <p class="section-eyebrow">Curriculum</p>
+    <h2 class="section-title">14 modules. Beginner to Architect.</h2>
+    <p class="section-sub">A structured path from "what is Data Vault?" to designing enterprise-scale implementations on cloud platforms.</p>
+
+    <div class="module-grid">
+
+      <a class="module-card" href="modules/module01.html" data-num="01">
+        <span class="mc-num" style="color:var(--teal)">Module 01 &middot; Beginner</span>
+        <h3 class="mc-title">Introduction to Data Vault 2.0</h3>
+        <ul class="mc-topics">
+          <li>What is Data Vault 2.0?</li>
+          <li>History &amp; evolution</li>
+          <li>DV vs Kimball vs Inmon</li>
+          <li>The Three Pillars: Hub, Link, Satellite</li>
+          <li>Business benefits &amp; use cases</li>
+          <li>Core vocabulary reference</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-beginner">Beginner</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module02.html" data-num="02">
+        <span class="mc-num" style="color:var(--teal)">Module 02 &middot; Beginner</span>
+        <h3 class="mc-title">Core Modeling Concepts</h3>
+        <ul class="mc-topics">
+          <li>The 9 DV2 modeling principles</li>
+          <li>Business Keys &mdash; the foundation</li>
+          <li>HashKey generation (SHA-256)</li>
+          <li>HashDiff for change detection</li>
+          <li>Load Date &amp; Record Source</li>
+          <li>Insert-only loading explained</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-beginner">Beginner</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module03.html" data-num="03">
+        <span class="mc-num" style="color:var(--gold)">Module 03 &middot; Intermediate</span>
+        <h3 class="mc-title">Hub Design Deep Dive</h3>
+        <ul class="mc-topics">
+          <li>Hub anatomy &amp; required columns</li>
+          <li>Choosing valid business keys</li>
+          <li>Hub SQL load patterns</li>
+          <li>Multi-source hub loading</li>
+          <li>Hub anti-patterns to avoid</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-intermediate">Intermediate</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module04.html" data-num="04">
+        <span class="mc-num" style="color:var(--gold)">Module 04 &middot; Intermediate</span>
+        <h3 class="mc-title">Link Design Deep Dive</h3>
+        <ul class="mc-topics">
+          <li>Link anatomy &amp; grain</li>
+          <li>Many-to-many relationships</li>
+          <li>Hierarchical links</li>
+          <li>Same-As Links for MDM</li>
+          <li>Non-historized (transaction) links</li>
+          <li>Link SQL load patterns</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-intermediate">Intermediate</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module05.html" data-num="05">
+        <span class="mc-num" style="color:var(--gold)">Module 05 &middot; Intermediate</span>
+        <h3 class="mc-title">Satellite Design Deep Dive</h3>
+        <ul class="mc-topics">
+          <li>Satellite anatomy &amp; splitting strategy</li>
+          <li>CDC loading with HashDiff</li>
+          <li>Multi-Active Satellites</li>
+          <li>Effectivity Satellites</li>
+          <li>Status tracking patterns</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-intermediate">Intermediate</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module06.html" data-num="06">
+        <span class="mc-num" style="color:var(--gold)">Module 06 &middot; Intermediate</span>
+        <h3 class="mc-title">Raw Vault Architecture</h3>
+        <ul class="mc-topics">
+          <li>Raw Vault design philosophy</li>
+          <li>Staging layer design</li>
+          <li>Parallel loading strategies</li>
+          <li>Error Mart pattern</li>
+          <li>Full vs delta loading</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-intermediate">Intermediate</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module07.html" data-num="07">
+        <span class="mc-num" style="color:var(--coral)">Module 07 &middot; Advanced</span>
+        <h3 class="mc-title">Business Vault Architecture</h3>
+        <ul class="mc-topics">
+          <li>Business Vault purpose &amp; scope</li>
+          <li>Point-in-Time (PIT) tables</li>
+          <li>Bridge tables</li>
+          <li>Computed Satellites</li>
+          <li>Reference &amp; code tables</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-advanced">Advanced</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module08.html" data-num="08">
+        <span class="mc-num" style="color:var(--coral)">Module 08 &middot; Advanced</span>
+        <h3 class="mc-title">Performance Optimization</h3>
+        <ul class="mc-topics">
+          <li>Indexing strategy for DV</li>
+          <li>PIT table deep dive</li>
+          <li>Partitioning strategies</li>
+          <li>Materialized views in DV</li>
+          <li>Parallel load architecture</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-advanced">Advanced</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module09.html" data-num="09">
+        <span class="mc-num" style="color:var(--coral)">Module 09 &middot; Advanced</span>
+        <h3 class="mc-title">Advanced Data Vault 2.0</h3>
+        <ul class="mc-topics">
+          <li>Anchor Modeling comparison</li>
+          <li>DV on graph databases</li>
+          <li>Temporal Data Vault (bi-temporal)</li>
+          <li>Soft business rules</li>
+          <li>DV &amp; Master Data Management</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-advanced">Advanced</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module10.html" data-num="10">
+        <span class="mc-num" style="color:var(--coral)">Module 10 &middot; Advanced</span>
+        <h3 class="mc-title">Automation &amp; Metadata</h3>
+        <ul class="mc-topics">
+          <li>Metadata-driven development</li>
+          <li>dbt with Data Vault</li>
+          <li>WhereScape RED overview</li>
+          <li>Auto-generating DDL &amp; ETL</li>
+          <li>Data contracts for DV</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-advanced">Advanced</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module11.html" data-num="11">
+        <span class="mc-num" style="color:var(--purple)">Module 11 &middot; Architect</span>
+        <h3 class="mc-title">Cloud Data Vault</h3>
+        <ul class="mc-topics">
+          <li>Snowflake Data Vault patterns</li>
+          <li>BigQuery Data Vault</li>
+          <li>Databricks &amp; Delta Lake</li>
+          <li>Cloud cost optimization</li>
+          <li>Streaming vault patterns</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-architect">Architect</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module12.html" data-num="12">
+        <span class="mc-num" style="color:var(--purple)">Module 12 &middot; Architect</span>
+        <h3 class="mc-title">DV to Dimensional Modeling</h3>
+        <ul class="mc-topics">
+          <li>Information Mart architecture</li>
+          <li>DV to Star Schema</li>
+          <li>DV to wide / flat tables</li>
+          <li>SCD Type 1/2/3/6 from DV</li>
+          <li>Data Product design</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-architect">Architect</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module13.html" data-num="13">
+        <span class="mc-num" style="color:var(--purple)">Module 13 &middot; Architect</span>
+        <h3 class="mc-title">Enterprise Case Studies</h3>
+        <ul class="mc-topics">
+          <li>Banking &amp; Finance case study</li>
+          <li>Retail &amp; E-Commerce case study</li>
+          <li>Healthcare (HIPAA) case study</li>
+          <li>Legacy DW migration playbook</li>
+          <li>Data Governance with DV</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-architect">Architect</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+      <a class="module-card" href="modules/module14.html" data-num="14">
+        <span class="mc-num" style="color:var(--purple)">Module 14 &middot; Architect</span>
+        <h3 class="mc-title">Interview Mastery</h3>
+        <ul class="mc-topics">
+          <li>Junior/mid-level Q&amp;As (30+)</li>
+          <li>Senior/architect questions</li>
+          <li>Live SQL coding challenges</li>
+          <li>System design: DV at scale</li>
+          <li>CDVDM certification prep</li>
+        </ul>
+        <div class="mc-footer">
+          <span class="mc-level level-architect">Architect</span>
+          <span class="mc-arrow">&#8594;</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to become a Data Vault expert?</h2>
+    <p>Start with Module 01 &mdash; no account, no download, no cost.</p>
+    <div class="hero-actions" style="justify-content:center">
+      <a href="modules/module01.html" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Begin Module 01
+      </a>
+      <a href="modules/module14.html" class="btn-outline">Jump to Interview Prep &#8594;</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; A free, open learning resource for enterprise data engineers.
+  DV2 methodology by <strong>Dan Linstedt</strong>.
+</footer>
+
+<script src="assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage(null, 0);</script>
+</body>
+</html>

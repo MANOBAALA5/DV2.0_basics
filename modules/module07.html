@@ -1,0 +1,682 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Business Vault Architecture in Data Vault 2.0 — Point-in-Time tables, Bridge tables, Computed Satellites, and soft business rules that sit between the Raw Vault and Information Marts.">
+<title>Module 07: Business Vault Architecture | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html" class="active">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">07</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--coral);border-color:rgba(248,113,113,0.3);background:var(--coral-dim)">
+      Advanced &nbsp;&middot;&nbsp; Module 07 of 14
+    </span>
+    <h1>Business Vault<br><em style="color:var(--gold)">Architecture</em></h1>
+    <p class="mod-hero-desc">
+      The Business Vault sits between the Raw Vault and your Information Marts. It&rsquo;s where soft business rules, derived data, and performance optimization structures live &mdash; without compromising Raw Vault auditability.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~55 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Advanced</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;06</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: BUSINESS VAULT PURPOSE & SCOPE
+       ============================================================ -->
+  <article class="concept" data-topic="bv-purpose" id="bv-purpose">
+    <p class="concept-num">Concept 01</p>
+    <h2>Business Vault Purpose &amp; Scope</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        The Raw Vault stores everything exactly as the source sent it. But business users don&rsquo;t query Raw Vault directly &mdash; it&rsquo;s too complex, too normalized, and has no business logic applied. The <strong>Business Vault is the &ldquo;interpretation layer&rdquo;</strong> that sits between the raw data and the reporting layer. It&rsquo;s where business rules turn data into information, without destroying the raw historical record.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        The Raw Vault is like a <strong>surveillance archive</strong> &mdash; every frame recorded, every event captured, nothing ever deleted. The Business Vault is like the <strong>editor&rsquo;s desk</strong>: analysts take that footage, add timestamps, labels, and context summaries, organize it into meaningful chapters. The raw tapes stay locked in the archive room, untouched. What business users see is the edited, annotated version &mdash; built from the raw footage but never replacing it.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>What Lives in the Business Vault</h3>
+      <ul>
+        <li><strong>Point-in-Time (PIT) tables</strong> &mdash; Pre-joined satellite timelines for fast &ldquo;what was current on date X?&rdquo; queries. One row per entity per snapshot date.</li>
+        <li><strong>Bridge tables</strong> &mdash; Pre-flattened Hub&ndash;Link&ndash;Hub chains for faster relationship traversal across multiple levels.</li>
+        <li><strong>Computed Satellites (BSAT)</strong> &mdash; Pre-calculated KPIs and derived metrics stored as satellite history (e.g., customer risk scores, 30-day moving averages).</li>
+        <li><strong>Soft business rule applications</strong> &mdash; Code table lookups, classification logic, derived flags applied to Raw Vault data.</li>
+        <li><strong>Reference data</strong> &mdash; Currency codes, country codes, hierarchy definitions structured as Hub + Satellite pairs.</li>
+      </ul>
+    </div>
+
+    <div class="detail">
+      <h3>What Does NOT Live in the Business Vault</h3>
+      <ul>
+        <li><strong>Raw source data</strong> &mdash; That belongs in the Raw Vault (Hubs, Links, Satellites loaded directly from staging).</li>
+        <li><strong>Final reporting structures</strong> &mdash; Star schemas, flat tables, and OLAP cubes belong in the Information Mart.</li>
+        <li><strong>Hard business rules</strong> &mdash; Structural rules (key parsing, format standardization, NULL filtering) run in the Staging Layer before the Raw Vault load, never after.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Key principle:</strong> &ldquo;The Business Vault enhances raw data with business context while maintaining full lineage to the source.&rdquo; Every Business Vault structure is derived from the Raw Vault &mdash; it can be dropped and fully rebuilt without data loss because the Raw Vault is always the source of truth.</p>
+    </div>
+
+    <h3>Architecture Layers</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 720 412" xmlns="http://www.w3.org/2000/svg" aria-label="Data Vault 2.0 four-layer architecture">
+        <defs>
+          <marker id="m07-arr-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="rgba(34,211,200,0.85)"/>
+          </marker>
+          <marker id="m07-arr-gold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="rgba(232,184,75,0.85)"/>
+          </marker>
+          <marker id="m07-arr-purple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="rgba(167,139,250,0.85)"/>
+          </marker>
+        </defs>
+
+        <!-- Source Systems -->
+        <rect x="30" y="8" width="660" height="60" rx="8" fill="rgba(12,15,26,0.7)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <text x="360" y="33" text-anchor="middle" fill="#eef2ff" font-family="Syne,sans-serif" font-size="12" font-weight="700" letter-spacing="0.08em">SOURCE SYSTEMS</text>
+        <text x="360" y="55" text-anchor="middle" fill="rgba(238,242,255,0.38)" font-family="JetBrains Mono,monospace" font-size="10">CRM  ·  ERP  ·  Web Analytics  ·  Mobile  ·  Third-Party APIs</text>
+
+        <!-- Arrow: Source → Raw Vault -->
+        <line x1="360" y1="68" x2="360" y2="93" stroke="rgba(34,211,200,0.7)" stroke-width="2" marker-end="url(#m07-arr-teal)"/>
+        <text x="374" y="84" fill="rgba(34,211,200,0.65)" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.05em">raw load</text>
+
+        <!-- Raw Vault -->
+        <rect x="30" y="96" width="660" height="72" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.45)" stroke-width="1.5"/>
+        <text x="360" y="120" text-anchor="middle" fill="#22d3c8" font-family="Syne,sans-serif" font-size="13" font-weight="800" letter-spacing="0.1em">RAW VAULT</text>
+        <text x="170" y="146" text-anchor="middle" fill="rgba(34,211,200,0.85)" font-family="JetBrains Mono,monospace" font-size="10">HUB tables</text>
+        <text x="360" y="146" text-anchor="middle" fill="rgba(34,211,200,0.85)" font-family="JetBrains Mono,monospace" font-size="10">LINK tables</text>
+        <text x="550" y="146" text-anchor="middle" fill="rgba(34,211,200,0.85)" font-family="JetBrains Mono,monospace" font-size="10">SATELLITE tables</text>
+        <text x="360" y="161" text-anchor="middle" fill="rgba(238,242,255,0.28)" font-family="DM Sans,sans-serif" font-size="9">Insert-only · No business rules · Full historical lineage · Permanent</text>
+
+        <!-- Arrow: Raw Vault → Business Vault -->
+        <line x1="360" y1="168" x2="360" y2="195" stroke="rgba(232,184,75,0.7)" stroke-width="2" marker-end="url(#m07-arr-gold)"/>
+        <text x="374" y="185" fill="rgba(232,184,75,0.65)" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.05em">derives from</text>
+
+        <!-- Business Vault -->
+        <rect x="30" y="198" width="660" height="80" rx="8" fill="rgba(232,184,75,0.09)" stroke="rgba(232,184,75,0.45)" stroke-width="1.5"/>
+        <text x="360" y="222" text-anchor="middle" fill="#e8b84b" font-family="Syne,sans-serif" font-size="13" font-weight="800" letter-spacing="0.1em">BUSINESS VAULT</text>
+        <text x="112" y="248" text-anchor="middle" fill="rgba(232,184,75,0.85)" font-family="JetBrains Mono,monospace" font-size="10">PIT tables</text>
+        <text x="268" y="248" text-anchor="middle" fill="rgba(232,184,75,0.85)" font-family="JetBrains Mono,monospace" font-size="10">BRIDGE tables</text>
+        <text x="450" y="248" text-anchor="middle" fill="rgba(232,184,75,0.85)" font-family="JetBrains Mono,monospace" font-size="10">Computed Sats (BSAT)</text>
+        <text x="620" y="248" text-anchor="middle" fill="rgba(232,184,75,0.85)" font-family="JetBrains Mono,monospace" font-size="10">Ref tables</text>
+        <text x="360" y="267" text-anchor="middle" fill="rgba(238,242,255,0.28)" font-family="DM Sans,sans-serif" font-size="9">Soft business rules · Derived data · Query optimization · Full lineage preserved</text>
+
+        <!-- Arrow: Business Vault → Information Mart -->
+        <line x1="360" y1="278" x2="360" y2="305" stroke="rgba(167,139,250,0.7)" stroke-width="2" marker-end="url(#m07-arr-purple)"/>
+        <text x="374" y="295" fill="rgba(167,139,250,0.65)" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.05em">builds on</text>
+
+        <!-- Information Mart -->
+        <rect x="30" y="308" width="660" height="70" rx="8" fill="rgba(167,139,250,0.08)" stroke="rgba(167,139,250,0.45)" stroke-width="1.5"/>
+        <text x="360" y="332" text-anchor="middle" fill="#a78bfa" font-family="Syne,sans-serif" font-size="13" font-weight="800" letter-spacing="0.1em">INFORMATION MART</text>
+        <text x="175" y="358" text-anchor="middle" fill="rgba(167,139,250,0.85)" font-family="JetBrains Mono,monospace" font-size="10">Star Schemas</text>
+        <text x="360" y="358" text-anchor="middle" fill="rgba(167,139,250,0.85)" font-family="JetBrains Mono,monospace" font-size="10">Wide / Flat Tables</text>
+        <text x="545" y="358" text-anchor="middle" fill="rgba(167,139,250,0.85)" font-family="JetBrains Mono,monospace" font-size="10">OLAP Cubes</text>
+        <text x="360" y="370" text-anchor="middle" fill="rgba(238,242,255,0.25)" font-family="DM Sans,sans-serif" font-size="9">Consumer-facing · BI tools · Data scientists · Business analysts</text>
+
+        <text x="360" y="400" text-anchor="middle" fill="rgba(238,242,255,0.16)" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.12em">&#9660;  BUSINESS USERS / BI TOOLS  &#9660;</text>
+      </svg>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: POINT-IN-TIME (PIT) TABLES
+       ============================================================ -->
+  <article class="concept" data-topic="pit-tables" id="pit-tables">
+    <p class="concept-num">Concept 02</p>
+    <h2>Point-in-Time (PIT) Tables</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Imagine you want to know <em>&ldquo;what was the complete customer picture on January 1, 2023?&rdquo;</em> You need to query 5 different satellites and find the row that was current on that date for each. Without a PIT table, you write 5 <strong>MAX(LOAD_DATE)</strong> subqueries. That&rsquo;s slow and complex. A PIT table <strong>pre-joins all those satellite timelines</strong> so you just query ONE table for the snapshot date &mdash; it already knows which satellite row was current on any given day.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>What a PIT Table Contains</h3>
+      <p>A PIT table stores one row per entity per <strong>snapshot date</strong> (daily, weekly, or by event). For each snapshot date, it records which satellite rows were &ldquo;current&rdquo; on that date by storing their LOAD_DATE values. This eliminates correlated subqueries at query time entirely.</p>
+      <ul>
+        <li>The <strong>Hub hash key</strong> to join back to the entity</li>
+        <li>The <strong>snapshot date</strong> &mdash; the point in time being captured</li>
+        <li>One <strong>LOAD_DATE column per satellite</strong> &mdash; the LOAD_DATE of the satellite row that was current on the snapshot date</li>
+        <li><code>NULL</code> in a satellite column means no record existed for that entity on that date</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; PIT_CUSTOMER Table DDL</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- PIT table for Customer entity</span>
+<span class="kw">CREATE TABLE</span> PIT_CUSTOMER (
+    <span class="hub">HUB_CUSTOMER_HK</span>               <span class="typ">CHAR(32)</span>   <span class="kw">NOT NULL</span>,
+    <span class="str">SNAPSHOT_DATE</span>                 <span class="typ">DATE</span>       <span class="kw">NOT NULL</span>,
+    <span class="cm">-- One column per satellite: the LOAD_DATE of the row current on that date</span>
+    <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS_LDT</span> <span class="typ">TIMESTAMP</span>,  <span class="cm">-- NULL if no record existed on this date</span>
+    <span class="sat">SAT_CUSTOMER_CONTACT_LDT</span>      <span class="typ">TIMESTAMP</span>,
+    <span class="sat">SAT_CUSTOMER_FINANCIALS_LDT</span>   <span class="typ">TIMESTAMP</span>,
+    <span class="sat">SAT_CUSTOMER_STATUS_LDT</span>       <span class="typ">TIMESTAMP</span>,
+    <span class="kw">CONSTRAINT</span> pk_pit_cust <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">SNAPSHOT_DATE</span>)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; PIT Generation (Daily Snapshot, Last 30 Days)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Generate PIT for all customers, daily snapshots for last 30 days</span>
+<span class="kw">INSERT INTO</span> PIT_CUSTOMER
+<span class="kw">SELECT</span>
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+    d.<span class="str">SNAPSHOT_DATE</span>,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>)
+     <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.<span class="str">SNAPSHOT_DATE</span>
+    ) <span class="kw">AS</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS_LDT</span>,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>)
+     <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.<span class="str">SNAPSHOT_DATE</span>
+    ) <span class="kw">AS</span> <span class="sat">SAT_CUSTOMER_CONTACT_LDT</span>,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>)
+     <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.<span class="str">SNAPSHOT_DATE</span>
+    ) <span class="kw">AS</span> <span class="sat">SAT_CUSTOMER_FINANCIALS_LDT</span>,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>)
+     <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_STATUS</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.<span class="str">SNAPSHOT_DATE</span>
+    ) <span class="kw">AS</span> <span class="sat">SAT_CUSTOMER_STATUS_LDT</span>
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">CROSS JOIN</span> (
+    <span class="cm">-- Date spine: one row per day for the last 30 days</span>
+    <span class="kw">SELECT</span> <span class="fn">DATEADD</span>(<span class="str">'day'</span>, <span class="op">-</span>seq, <span class="fn">CURRENT_DATE</span>()) <span class="kw">AS</span> <span class="str">SNAPSHOT_DATE</span>
+    <span class="kw">FROM</span> <span class="fn">TABLE</span>(<span class="fn">GENERATOR</span>(ROWCOUNT => <span class="num">30</span>))
+    <span class="kw">ORDER BY</span> seq
+) d;</pre>
+    </div>
+
+    <div class="detail">
+      <h3>The Query Simplification</h3>
+      <p>The PIT table converts complex multi-correlated-subquery SQL into simple equality joins. Here is the same business query written both ways:</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Without PIT vs With PIT</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ❌ WITHOUT PIT: one correlated subquery per satellite — slow at scale</span>
+<span class="kw">SELECT</span> h.<span class="str">CUSTOMER_BK</span>, d.FIRST_NAME, c.EMAIL, f.CREDIT_LIMIT
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> d
+  <span class="kw">ON</span>  d.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> d.<span class="str">LOAD_DATE</span> <span class="op">=</span> (<span class="kw">SELECT</span> <span class="fn">MAX</span>(<span class="str">LOAD_DATE</span>) <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+                    <span class="kw">WHERE</span> <span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+                      <span class="kw">AND</span> <span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> <span class="str">'2023-01-01'</span>)
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> c
+  <span class="kw">ON</span>  c.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> c.<span class="str">LOAD_DATE</span> <span class="op">=</span> (<span class="kw">SELECT</span> <span class="fn">MAX</span>(<span class="str">LOAD_DATE</span>) <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_CONTACT</span>
+                    <span class="kw">WHERE</span> <span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+                      <span class="kw">AND</span> <span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> <span class="str">'2023-01-01'</span>)
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span> f
+  <span class="kw">ON</span>  f.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> f.<span class="str">LOAD_DATE</span> <span class="op">=</span> (<span class="kw">SELECT</span> <span class="fn">MAX</span>(<span class="str">LOAD_DATE</span>) <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span>
+                    <span class="kw">WHERE</span> <span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+                      <span class="kw">AND</span> <span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> <span class="str">'2023-01-01'</span>);
+
+<span class="cm">-- ✅ WITH PIT: single snapshot date filter, direct equality joins — fast</span>
+<span class="kw">SELECT</span> h.<span class="str">CUSTOMER_BK</span>, d.FIRST_NAME, c.EMAIL, f.CREDIT_LIMIT
+<span class="kw">FROM</span> PIT_CUSTOMER pit
+<span class="kw">JOIN</span> <span class="hub">HUB_CUSTOMER</span> h
+  <span class="kw">ON</span>  h.<span class="hub">HUB_CUSTOMER_HK</span>    <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> d
+  <span class="kw">ON</span>  d.<span class="hub">HUB_CUSTOMER_HK</span>    <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> d.<span class="str">LOAD_DATE</span>           <span class="op">=</span> pit.<span class="sat">SAT_CUSTOMER_DEMOGRAPHICS_LDT</span>
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> c
+  <span class="kw">ON</span>  c.<span class="hub">HUB_CUSTOMER_HK</span>    <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> c.<span class="str">LOAD_DATE</span>           <span class="op">=</span> pit.<span class="sat">SAT_CUSTOMER_CONTACT_LDT</span>
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span> f
+  <span class="kw">ON</span>  f.<span class="hub">HUB_CUSTOMER_HK</span>    <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+ <span class="kw">AND</span> f.<span class="str">LOAD_DATE</span>           <span class="op">=</span> pit.<span class="sat">SAT_CUSTOMER_FINANCIALS_LDT</span>
+<span class="kw">WHERE</span> pit.<span class="str">SNAPSHOT_DATE</span> <span class="op">=</span> <span class="str">'2023-01-01'</span>;
+<span class="cm">-- LOAD_DATEs are pre-looked up. No MAX aggregations at runtime. 10–100× faster.</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#9889;</span>
+      <p><strong>Performance impact:</strong> On a vault with 10 million customers and 4 satellites, the without-PIT query executes 40 million correlated subqueries per run. The with-PIT query performs a single date filter and 3 direct equality joins. Production benchmarks consistently show <strong>10&times;&ndash;100&times; improvement</strong> after PIT tables are introduced.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: BRIDGE TABLES
+       ============================================================ -->
+  <article class="concept" data-topic="bridge-tables" id="bridge-tables">
+    <p class="concept-num">Concept 03</p>
+    <h2>Bridge Tables</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Sometimes you need to traverse multiple Hub&ndash;Link&ndash;Hub&ndash;Link&ndash;Hub chains to answer a query. <em>&ldquo;Give me all products ordered by customers in Germany.&rdquo;</em> Without a Bridge table, that&rsquo;s 4&ndash;5 joins every time any report runs. A Bridge table <strong>pre-flattens that chain into one wide lookup table</strong> with all relevant hash keys, turning a complex traversal into a single lookup join.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Bridge Table Structure</h3>
+      <p>A Bridge table is a snapshot-based wide table containing all the hash keys from a Hub&ndash;Link traversal chain. It is rebuilt periodically from the Raw Vault. Bridge tables do not replace vault structures &mdash; they are performance aids for known, frequently-run traversal patterns.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; BRIDGE_CUSTOMER_ORDER_PRODUCT Table DDL</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Bridge: Customer → Order → Product (pre-flattened relationship chain)</span>
+<span class="kw">CREATE TABLE</span> BRIDGE_CUSTOMER_ORDER_PRODUCT (
+    BRIDGE_CUSTOMER_ORDER_PRODUCT_HK  <span class="typ">CHAR(32)</span>  <span class="kw">NOT NULL</span>,
+    <span class="str">SNAPSHOT_DATE</span>                     <span class="typ">DATE</span>      <span class="kw">NOT NULL</span>,
+    <span class="cm">-- All keys in the traversal chain, pre-joined into one row</span>
+    <span class="hub">HUB_CUSTOMER_HK</span>                   <span class="typ">CHAR(32)</span>  <span class="kw">NOT NULL</span>,
+    <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>            <span class="typ">CHAR(32)</span>,
+    <span class="hub">HUB_ORDER_HK</span>                      <span class="typ">CHAR(32)</span>,
+    <span class="lnk">LINK_ORDER_PRODUCT_HK</span>             <span class="typ">CHAR(32)</span>,
+    <span class="hub">HUB_PRODUCT_HK</span>                    <span class="typ">CHAR(32)</span>,
+    <span class="kw">CONSTRAINT</span> pk_bridge_cop <span class="kw">PRIMARY KEY</span> (BRIDGE_CUSTOMER_ORDER_PRODUCT_HK, <span class="str">SNAPSHOT_DATE</span>)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Bridge Generation</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="kw">INSERT INTO</span> BRIDGE_CUSTOMER_ORDER_PRODUCT
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        h_c.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        h_p.<span class="hub">HUB_PRODUCT_HK</span>  <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">CAST</span>(d.<span class="str">SNAPSHOT_DATE</span> <span class="kw">AS</span> <span class="typ">VARCHAR</span>)
+    ) <span class="kw">AS</span> BRIDGE_CUSTOMER_ORDER_PRODUCT_HK,
+    d.<span class="str">SNAPSHOT_DATE</span>,
+    h_c.<span class="hub">HUB_CUSTOMER_HK</span>,
+    lco.<span class="lnk">LINK_CUSTOMER_ORDER_HK</span>,
+    h_o.<span class="hub">HUB_ORDER_HK</span>,
+    lop.<span class="lnk">LINK_ORDER_PRODUCT_HK</span>,
+    h_p.<span class="hub">HUB_PRODUCT_HK</span>
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h_c
+<span class="kw">JOIN</span> <span class="lnk">LINK_CUSTOMER_ORDER</span>  lco  <span class="kw">ON</span> lco.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h_c.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">JOIN</span> <span class="hub">HUB_ORDER</span>             h_o  <span class="kw">ON</span> h_o.<span class="hub">HUB_ORDER_HK</span>    <span class="op">=</span> lco.<span class="hub">HUB_ORDER_HK</span>
+<span class="kw">JOIN</span> <span class="lnk">LINK_ORDER_PRODUCT</span>   lop  <span class="kw">ON</span> lop.<span class="hub">HUB_ORDER_HK</span>    <span class="op">=</span> h_o.<span class="hub">HUB_ORDER_HK</span>
+<span class="kw">JOIN</span> <span class="hub">HUB_PRODUCT</span>           h_p  <span class="kw">ON</span> h_p.<span class="hub">HUB_PRODUCT_HK</span>  <span class="op">=</span> lop.<span class="hub">HUB_PRODUCT_HK</span>
+<span class="kw">CROSS JOIN</span> (<span class="kw">SELECT</span> <span class="fn">CURRENT_DATE</span>() <span class="kw">AS</span> <span class="str">SNAPSHOT_DATE</span>) d;</pre>
+    </div>
+
+    <h3>Hub&ndash;Link Chain Visualization</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 720 192" xmlns="http://www.w3.org/2000/svg" aria-label="Hub-Link chain collapsed into a Bridge table">
+        <defs>
+          <marker id="m07-chain" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0,7 2.5,0 5" fill="rgba(255,255,255,0.35)"/>
+          </marker>
+        </defs>
+
+        <!-- HUB_CUSTOMER -->
+        <rect x="8"   y="14" width="104" height="52" rx="6" fill="rgba(34,211,200,0.1)" stroke="rgba(34,211,200,0.55)" stroke-width="1.5"/>
+        <text x="60"  y="36" text-anchor="middle" fill="#22d3c8" font-family="Syne,sans-serif" font-size="9" font-weight="700">HUB</text>
+        <text x="60"  y="52" text-anchor="middle" fill="rgba(34,211,200,0.72)" font-family="JetBrains Mono,monospace" font-size="8">CUSTOMER</text>
+
+        <line x1="112" y1="40" x2="130" y2="40" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#m07-chain)"/>
+
+        <!-- LINK_CUSTOMER_ORDER -->
+        <rect x="132" y="14" width="104" height="52" rx="6" fill="rgba(232,184,75,0.1)" stroke="rgba(232,184,75,0.55)" stroke-width="1.5"/>
+        <text x="184" y="36" text-anchor="middle" fill="#e8b84b" font-family="Syne,sans-serif" font-size="9" font-weight="700">LINK</text>
+        <text x="184" y="52" text-anchor="middle" fill="rgba(232,184,75,0.72)" font-family="JetBrains Mono,monospace" font-size="8">CUST_ORDER</text>
+
+        <line x1="236" y1="40" x2="254" y2="40" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#m07-chain)"/>
+
+        <!-- HUB_ORDER -->
+        <rect x="256" y="14" width="104" height="52" rx="6" fill="rgba(34,211,200,0.1)" stroke="rgba(34,211,200,0.55)" stroke-width="1.5"/>
+        <text x="308" y="36" text-anchor="middle" fill="#22d3c8" font-family="Syne,sans-serif" font-size="9" font-weight="700">HUB</text>
+        <text x="308" y="52" text-anchor="middle" fill="rgba(34,211,200,0.72)" font-family="JetBrains Mono,monospace" font-size="8">ORDER</text>
+
+        <line x1="360" y1="40" x2="378" y2="40" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#m07-chain)"/>
+
+        <!-- LINK_ORDER_PRODUCT -->
+        <rect x="380" y="14" width="104" height="52" rx="6" fill="rgba(232,184,75,0.1)" stroke="rgba(232,184,75,0.55)" stroke-width="1.5"/>
+        <text x="432" y="36" text-anchor="middle" fill="#e8b84b" font-family="Syne,sans-serif" font-size="9" font-weight="700">LINK</text>
+        <text x="432" y="52" text-anchor="middle" fill="rgba(232,184,75,0.72)" font-family="JetBrains Mono,monospace" font-size="8">ORDER_PROD</text>
+
+        <line x1="484" y1="40" x2="502" y2="40" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" marker-end="url(#m07-chain)"/>
+
+        <!-- HUB_PRODUCT -->
+        <rect x="504" y="14" width="104" height="52" rx="6" fill="rgba(34,211,200,0.1)" stroke="rgba(34,211,200,0.55)" stroke-width="1.5"/>
+        <text x="556" y="36" text-anchor="middle" fill="#22d3c8" font-family="Syne,sans-serif" font-size="9" font-weight="700">HUB</text>
+        <text x="556" y="52" text-anchor="middle" fill="rgba(34,211,200,0.72)" font-family="JetBrains Mono,monospace" font-size="8">PRODUCT</text>
+
+        <!-- 5 joins label -->
+        <text x="636" y="36" text-anchor="middle" fill="rgba(248,113,113,0.75)" font-family="JetBrains Mono,monospace" font-size="8">5 joins</text>
+        <text x="636" y="50" text-anchor="middle" fill="rgba(248,113,113,0.75)" font-family="JetBrains Mono,monospace" font-size="8">per query</text>
+
+        <!-- Collapse label -->
+        <text x="360" y="86" text-anchor="middle" fill="rgba(232,184,75,0.62)" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.06em">&#8595;  pre-flattened into Bridge table  &#8595;</text>
+
+        <!-- Bridge table -->
+        <rect x="18" y="100" width="684" height="58" rx="6" fill="rgba(232,184,75,0.09)" stroke="rgba(232,184,75,0.55)" stroke-width="1.5"/>
+        <text x="360" y="120" text-anchor="middle" fill="#e8b84b" font-family="Syne,sans-serif" font-size="10" font-weight="700" letter-spacing="0.06em">BRIDGE_CUSTOMER_ORDER_PRODUCT</text>
+
+        <text x="82"  y="146" text-anchor="middle" fill="rgba(34,211,200,0.82)"  font-family="JetBrains Mono,monospace" font-size="8">HUB_CUST_HK</text>
+        <text x="216" y="146" text-anchor="middle" fill="rgba(232,184,75,0.82)"  font-family="JetBrains Mono,monospace" font-size="8">LNK_CO_HK</text>
+        <text x="360" y="146" text-anchor="middle" fill="rgba(34,211,200,0.82)"  font-family="JetBrains Mono,monospace" font-size="8">HUB_ORD_HK</text>
+        <text x="504" y="146" text-anchor="middle" fill="rgba(232,184,75,0.82)"  font-family="JetBrains Mono,monospace" font-size="8">LNK_OP_HK</text>
+        <text x="638" y="146" text-anchor="middle" fill="rgba(34,211,200,0.82)"  font-family="JetBrains Mono,monospace" font-size="8">HUB_PROD_HK</text>
+
+        <text x="360" y="178" text-anchor="middle" fill="rgba(74,222,128,0.58)" font-family="JetBrains Mono,monospace" font-size="9">&#10003; Single lookup join — all keys in one row, no chain traversal at runtime</text>
+      </svg>
+    </div>
+
+    <div class="tip">
+      <p><strong>When to build a Bridge table:</strong> Build one when (1) you frequently need to traverse 3+ levels of vault hierarchy; (2) reports consistently join Customer &rarr; Order &rarr; Product or a similar chain that appears across many queries; (3) the traversal path is stable and won&rsquo;t change schema often. Bridge tables are rebuilt from the Raw Vault periodically &mdash; they don&rsquo;t affect vault integrity and can be dropped and regenerated at any time.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: COMPUTED SATELLITES & REFERENCE TABLES
+       ============================================================ -->
+  <article class="concept" data-topic="computed-sats" id="computed-sats">
+    <p class="concept-num">Concept 04</p>
+    <h2>Computed Satellites &amp; Reference Tables</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Sometimes you want to <strong>pre-calculate something expensive and store it as satellite history</strong>. A customer&rsquo;s credit risk score. A product&rsquo;s 30-day moving average price. A customer segment derived from purchase behaviour. These are <em>Computed Satellites</em> &mdash; they look like regular satellites, but their payload is derived from vault data rather than arriving from a source system. They live in the Business Vault, not the Raw Vault, and carry a <code>BSAT_</code> prefix to make this clear.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Computed Satellite Rules</h3>
+      <ul>
+        <li><strong>Naming convention</strong> &mdash; Use <code>BSAT_</code> prefix (Business Satellite) or <code>_COMPUTED</code> suffix to clearly distinguish from Raw Vault satellites at a glance.</li>
+        <li><strong>Derivation logic must be documented and versioned</strong> &mdash; The business rule (scoring formula, segment definition) must be tracked. The <code>RECORD_SOURCE</code> column identifies which rule version produced each row (e.g., <code>'BV.RISK_SCORING_ENGINE.V2'</code>).</li>
+        <li><strong>Insert-only like all vault rows</strong> &mdash; If the rule changes, you do <em>not</em> update old rows. You insert new rows with the new computed values and a new RECORD_SOURCE. Old rows remain untouched.</li>
+        <li><strong>Backtest capability is preserved</strong> &mdash; Old rows keep the old values, so you can always ask &ldquo;what would the old model have given?&rdquo; This is critical in regulated industries.</li>
+        <li><strong>LOAD_DATE tracks computation time</strong> &mdash; Not the underlying event time, but when the computation ran.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; BSAT_CUSTOMER_RISK_SCORE (Computed Satellite)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Computed Satellite: Customer Risk Score (Business Vault)</span>
+<span class="cm">-- BSAT_ prefix identifies this as a Business Vault derived structure</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">BSAT_CUSTOMER_RISK_SCORE</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>   <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>         <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>         <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>     <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span> <span class="kw">DEFAULT</span> <span class="str">'BV.RISK_SCORING_ENGINE.V2'</span>,
+    <span class="cm">-- Payload: entirely derived, not from any source system</span>
+    RISK_SCORE        <span class="typ">DECIMAL(5,2)</span>,      <span class="cm">-- 0.00 to 100.00</span>
+    RISK_CATEGORY     <span class="typ">VARCHAR(20)</span>,       <span class="cm">-- LOW, MEDIUM, HIGH, CRITICAL</span>
+    SCORE_VERSION     <span class="typ">VARCHAR(10)</span>,       <span class="cm">-- which model version produced this row</span>
+    COMPUTED_DATE     <span class="typ">DATE</span>,              <span class="cm">-- date the computation ran</span>
+    <span class="kw">CONSTRAINT</span> pk_bsat_crs <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+);
+
+<span class="cm">-- When scoring model upgrades V2 → V3: insert new rows, never update old ones</span>
+<span class="kw">INSERT INTO</span> <span class="sat">BSAT_CUSTOMER_RISK_SCORE</span>
+<span class="kw">SELECT</span>
+    r.<span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="fn">CURRENT_TIMESTAMP</span>()                              <span class="kw">AS</span> <span class="str">LOAD_DATE</span>,
+    <span class="fn">MD5</span>(<span class="fn">CAST</span>(r.new_score <span class="kw">AS</span> <span class="typ">VARCHAR</span>) <span class="op">||</span> r.new_category) <span class="kw">AS</span> <span class="str">HASH_DIFF</span>,
+    <span class="str">'BV.RISK_SCORING_ENGINE.V3'</span>                      <span class="kw">AS</span> <span class="str">RECORD_SOURCE</span>, <span class="cm">-- V3 explicit</span>
+    r.new_score                                      <span class="kw">AS</span> RISK_SCORE,
+    r.new_category                                   <span class="kw">AS</span> RISK_CATEGORY,
+    <span class="str">'V3'</span>                                             <span class="kw">AS</span> SCORE_VERSION,
+    <span class="fn">CURRENT_DATE</span>()                                   <span class="kw">AS</span> COMPUTED_DATE
+<span class="kw">FROM</span> scoring_engine_v3_output r;
+<span class="cm">-- V2 rows are untouched: backtest queries can still retrieve V2 results.</span></pre>
+    </div>
+
+    <div class="detail">
+      <h3>Reference Tables in the Business Vault</h3>
+      <p>
+        Reference data &mdash; currency codes, country codes, product category hierarchies, cost centre mappings &mdash; also lives in the Business Vault. Rather than flat lookup tables, DV2 models reference data as <strong>Hub + Satellite pairs</strong>:
+      </p>
+      <ul>
+        <li>The <strong>Hub</strong> holds the code value (e.g., <code>COUNTRY_CODE = 'DE'</code>), hashed to produce the hub key.</li>
+        <li>The <strong>Satellite</strong> holds description, validity dates, and classification attributes (e.g., <code>COUNTRY_NAME = 'Germany'</code>, <code>REGION = 'EMEA'</code>).</li>
+        <li>When a code is renamed or reclassified, a new satellite row is inserted. The Hub key never changes, providing full history of the reference data itself.</li>
+      </ul>
+    </div>
+
+    <div class="bpm-grid">
+      <div class="bp-box">
+        <h4>&#10003; Computed Satellite Best Practices</h4>
+        <ul>
+          <li>Always use <code>BSAT_</code> prefix to distinguish from raw satellites</li>
+          <li>Store the rule version in <code>RECORD_SOURCE</code> on every single row</li>
+          <li>Never update or delete old computed rows when a rule changes</li>
+          <li>Document the derivation logic and register it in a metadata catalogue</li>
+          <li>Use <code>HASH_DIFF</code> over payload columns to detect when a recomputed value has actually changed</li>
+          <li>Include a <code>COMPUTED_DATE</code> column to track when each run executed</li>
+        </ul>
+      </div>
+      <div class="mistake-box">
+        <h4>&#10007; Common Mistakes</h4>
+        <ul>
+          <li>Placing computed satellites in the Raw Vault schema &mdash; blurs lineage and auditability</li>
+          <li>Updating rows when a business rule changes &mdash; destroys backtest capability permanently</li>
+          <li>Omitting the rule version from <code>RECORD_SOURCE</code> &mdash; V1 and V2 results become indistinguishable</li>
+          <li>Hard-coding derivation logic inside PIT generation instead of a dedicated BSAT table</li>
+          <li>Failing to re-run BSAT load after rule changes &mdash; stale derived values flow into reports</li>
+          <li>Treating computed satellites as permanent truth rather than derived, rebuildable artefacts</li>
+        </ul>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: INTERVIEW Q&A
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 05</p>
+    <h2>Interview Q&amp;A: Business Vault</h2>
+
+    <p class="interview-section-label">Business Vault Interview Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a PIT table and what problem does it solve?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A <strong>Point-in-Time (PIT) table</strong> is a Business Vault structure that pre-materializes satellite LOAD_DATEs for each entity at specific snapshot dates. It solves the <strong>N &times; MAX(LOAD_DATE) subquery problem</strong>: without a PIT table, querying an entity&rsquo;s state at a specific date requires one correlated subquery per satellite, each finding the most recent row as of the query date.</p>
+          <p>With a PIT table, all those LOAD_DATEs are pre-computed and stored &mdash; a query simply filters on <code>SNAPSHOT_DATE</code> and joins directly to the satellite rows using stored LOAD_DATE values, skipping aggregation entirely. This can improve query performance by <strong>10&ndash;100&times;</strong> on large vault datasets. PIT tables are rebuilt periodically (typically nightly) from the Raw Vault and are always safe to truncate and rebuild.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How often should PIT tables be refreshed?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>It depends on your reporting SLA. Three common patterns:</p>
+          <p><strong>1. Daily snapshot</strong> &mdash; PIT has one row per entity per calendar day, refreshed nightly. Good for SCD2-style reporting and month-end snapshots. Most common in enterprise implementations.</p>
+          <p><strong>2. Load-event triggered</strong> &mdash; PIT is refreshed after each vault load batch, capturing the vault state after every load. Good for near-real-time reporting where users need vault data within minutes of each load completing.</p>
+          <p><strong>3. On-demand (view-based)</strong> &mdash; PIT is generated at query time using a view or stored procedure. Good for ad-hoc analysis and time-travel but loses the performance benefit entirely because the MAX aggregations run on demand.</p>
+          <p>For most enterprise implementations, a <strong>nightly daily snapshot PIT</strong> is standard, with on-demand generation available as a fallback for ad-hoc time-travel queries.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the difference between the Business Vault and the Information Mart?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>The <strong>Business Vault</strong> is still structured as Hubs, Links, and Satellites &mdash; it is a normalized extension of the Raw Vault. It contains derived data (computed satellites, soft rule applications) and performance structures (PIT tables, Bridge tables) but preserves the vault&rsquo;s historical fidelity and insert-only discipline. Its structures carry full lineage back to Raw Vault rows.</p>
+          <p>The <strong>Information Mart</strong> is consumer-facing: star schemas, flat wide tables, or OLAP cubes optimized for BI tools and data scientists. It is not historized in the vault sense &mdash; it presents current or period-summarized data in the shape business users expect.</p>
+          <p>Business Vault structures (PIT tables, Bridge tables) are <strong>intermediary building blocks</strong> that make constructing Information Mart structures efficient. The Business Vault evolves as business rules change; Information Marts are rebuilt from it. Neither layer is queried directly against the Raw Vault.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Can a Computed Satellite change its values? What happens if the business rule changes?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>No</strong> &mdash; computed satellite rows are insert-only like all vault rows. If a business rule changes (e.g., the risk scoring model is updated from V2 to V3), you do <strong>not</strong> update old rows. You insert new satellite rows with the new computed values and a new <code>RECORD_SOURCE</code> identifying the new rule version (e.g., <code>'BV.RISK_SCORING_ENGINE.V3'</code>).</p>
+          <p>Old rows retain the values computed under the old rule. This means you can always backtest: <em>&ldquo;what risk score would the old model have given this customer?&rdquo;</em> &mdash; the answer lives in the rows with <code>RECORD_SOURCE = 'BV.RISK_SCORING_ENGINE.V2'</code>.</p>
+          <p>This <strong>auditability of rule versions</strong> is a significant advantage in regulated industries (banking, insurance, healthcare) where you must prove that a decision was made using a specific, identifiable version of a model or formula.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What&rsquo;s a Bridge table and when would you build one?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A <strong>Bridge table</strong> is a Business Vault structure that pre-flattens a Hub&ndash;Link&ndash;Hub&ndash;Link chain into a wide lookup table containing all relevant hash keys in a single row. It is snapshot-based and rebuilt periodically from the Raw Vault.</p>
+          <p>Build one when:</p>
+          <p><strong>(1)</strong> You frequently need to traverse 3+ levels of vault hierarchy in queries &mdash; the traversal cost is paid once at build time, not at every query execution.</p>
+          <p><strong>(2)</strong> Reports consistently join Customer &rarr; Order &rarr; Product or similar multi-level chains &mdash; the same traversal pattern appearing across many different reports is a strong signal a Bridge table will pay off.</p>
+          <p><strong>(3)</strong> The traversal path is stable and its schema won&rsquo;t change frequently. Bridge tables are worth the maintenance cost only for well-established paths.</p>
+          <p>Bridge tables don&rsquo;t affect vault integrity because they are derived artefacts that can be dropped and fully rebuilt from the Raw Vault at any time.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 07 Key Takeaways</h3>
+      <ul>
+        <li>The Business Vault sits between the Raw Vault and Information Marts &mdash; it enhances raw data with business context (soft rules, derived values, query optimization) without ever touching Raw Vault rows.</li>
+        <li>PIT tables solve the N &times; MAX(LOAD_DATE) subquery problem by pre-materializing satellite LOAD_DATEs per snapshot date, delivering 10&ndash;100&times; query performance improvements on large vaults.</li>
+        <li>Bridge tables pre-flatten Hub&ndash;Link&ndash;Hub traversal chains into wide lookup rows, converting multi-join traversals into single-lookup joins for frequently-used relationship paths.</li>
+        <li>Computed Satellites (<code>BSAT_</code> prefix) store derived metrics as insert-only satellite history. When business rules change, new rows are inserted with the new rule version in RECORD_SOURCE &mdash; old rows are never altered, enabling backtest and rule version auditing.</li>
+        <li>All Business Vault structures are derived from the Raw Vault and can be dropped and fully rebuilt without data loss. The Raw Vault is always the permanent, unalterable source of truth.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module06.html">&larr; Module 06: Raw Vault Loading</a>
+  <a href="module08.html" class="next">Module 08: Performance &rarr;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 07 of 14 &mdash; Business Vault Architecture
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('07', 5);</script>
+</body>
+</html>

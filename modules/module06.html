@@ -1,0 +1,676 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Raw Vault Architecture — staging layer design, parallel loading strategies, Error Mart pattern, full vs delta loading, and interview prep for Data Vault 2.0.">
+<title>Module 06: Raw Vault Architecture | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html" class="active">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">06</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)">
+      Intermediate &nbsp;&middot;&nbsp; Module 06 of 14
+    </span>
+    <h1>Raw Vault<br><em style="color:var(--gold)">Architecture</em></h1>
+    <p class="mod-hero-desc">
+      The Raw Vault is the immutable record of everything your organisation has ever ingested &mdash; unmodified, auditable, and fully reloadable. Designing its loading pipeline correctly determines the performance ceiling of your entire Data Vault implementation.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~60 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Intermediate</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;05</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: RAW VAULT DESIGN PHILOSOPHY
+       ============================================================ -->
+  <article class="concept" data-topic="raw-vault-philosophy" id="raw-vault-philosophy">
+    <p class="concept-num">Concept 01</p>
+    <h2>Raw Vault Design Philosophy</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        The Raw Vault is like a <strong>legal archive</strong>. When documents arrive, you file them exactly as they came &mdash; no editing, no re-formatting, no throwing anything away. Years later, when an auditor asks &ldquo;what did your CRM say about customer X on March 3rd 2022?&rdquo; you can pull the exact file. The Raw Vault does the same for data: <strong>every row ever received is preserved forever, unchanged, with a timestamp and a source label</strong>.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        Think of the Raw Vault as a <strong>bank ledger</strong>. A bank never erases a debit or credit entry &mdash; every transaction is appended in chronological order. The ledger is the authoritative audit trail. Your Raw Vault is the ledger for all data that has ever flowed into your warehouse. Corrections don&rsquo;t erase old entries; they append new ones with the corrected values.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Three Commandments of the Raw Vault</h3>
+      <ul>
+        <li><strong>No business rules applied.</strong> The Raw Vault contains exactly what the source sent. No data cleansing, no lookups, no joins, no derivations. If the source sends a NULL phone number, the vault stores NULL. If the source sends a nonsensical value, it stores that too. Business rules belong in the Business Vault layer.</li>
+        <li><strong>Insert-only, never delete or update.</strong> The only mutation permitted is the optional LOAD_END_DATE update on Satellites (see Module 05). Every other operation is a pure INSERT. This is what makes the vault <strong>auditable and replayable</strong>.</li>
+        <li><strong>Everything is hashed and sourced.</strong> Every row carries a RECORD_SOURCE identifier and a Hash Key derived deterministically from the business key. This enables parallel loading from multiple source systems without central coordination.</li>
+      </ul>
+    </div>
+
+    <!-- SVG Diagram: Raw Vault layers -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Data Vault layer architecture: sources to staging to raw vault to business vault to information marts">
+        <!-- Source Systems -->
+        <rect x="10" y="60" width="110" height="44" rx="6" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.3)" stroke-width="1.2"/>
+        <text x="65" y="78" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8">CRM</text>
+        <text x="65" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.4)">Salesforce</text>
+        <rect x="10" y="116" width="110" height="44" rx="6" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.3)" stroke-width="1.2"/>
+        <text x="65" y="134" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8">ERP</text>
+        <text x="65" y="151" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.4)">SAP / Oracle</text>
+        <text x="65" y="45" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)" letter-spacing="1">SOURCES</text>
+
+        <!-- Arrow 1 -->
+        <line x1="122" y1="120" x2="170" y2="120" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="168,115 181,120 168,125" fill="rgba(232,184,75,0.6)"/>
+
+        <!-- Staging -->
+        <rect x="182" y="50" width="130" height="140" rx="8" fill="rgba(232,184,75,0.06)" stroke="rgba(232,184,75,0.35)" stroke-width="1.5"/>
+        <text x="247" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.55)" letter-spacing="1">STAGING</text>
+        <text x="247" y="85" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">Hash Keys</text>
+        <text x="247" y="103" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">Hash Diffs</text>
+        <text x="247" y="121" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">LOAD_DATE</text>
+        <text x="247" y="139" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">RECORD_SOURCE</text>
+        <text x="247" y="157" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.45)">No business rules</text>
+        <text x="247" y="175" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.45)">Transient / truncated</text>
+
+        <!-- Arrow 2 -->
+        <line x1="314" y1="120" x2="356" y2="120" stroke="rgba(167,139,250,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="354,115 367,120 354,125" fill="rgba(167,139,250,0.6)"/>
+
+        <!-- Raw Vault -->
+        <rect x="368" y="30" width="150" height="180" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.45)" stroke-width="2"/>
+        <text x="443" y="18" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.6)" letter-spacing="1">RAW VAULT</text>
+        <text x="443" y="60" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">HUB_*</text>
+        <text x="443" y="80" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">LINK_*</text>
+        <text x="443" y="100" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">SAT_*</text>
+        <text x="443" y="130" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">Insert-only</text>
+        <text x="443" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">No business rules</text>
+        <text x="443" y="166" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">Full audit trail</text>
+        <text x="443" y="184" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">Permanent</text>
+
+        <!-- Arrow 3 -->
+        <line x1="520" y1="120" x2="558" y2="120" stroke="rgba(134,239,172,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="556,115 569,120 556,125" fill="rgba(134,239,172,0.6)"/>
+
+        <!-- Business Vault -->
+        <rect x="570" y="50" width="140" height="70" rx="8" fill="rgba(134,239,172,0.06)" stroke="rgba(134,239,172,0.35)" stroke-width="1.5"/>
+        <text x="640" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(134,239,172,0.55)" letter-spacing="1">BUSINESS VAULT</text>
+        <text x="640" y="75" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">PIT Tables</text>
+        <text x="640" y="93" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">Bridge Tables</text>
+        <text x="640" y="111" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">Computed SATs</text>
+      </svg>
+    </div>
+
+    <div class="detail">
+      <h3>What the Raw Vault Does NOT Contain</h3>
+      <ul>
+        <li><strong>No aggregations.</strong> No SUM, AVG, or COUNT results. All aggregations happen in the Business Vault or Information Marts.</li>
+        <li><strong>No derived columns.</strong> No calculated fields, no flag columns derived by comparing two raw values. If CUSTOMER_STATUS = &ldquo;ACTIVE&rdquo; means something in the business, that derivation happens downstream.</li>
+        <li><strong>No cross-source joins.</strong> The Raw Vault never merges attributes from CRM and ERP into a single row. Each source has its own Satellite. The Business Vault handles cross-source reconciliation.</li>
+        <li><strong>No reference data resolution.</strong> If the source sends a currency code &ldquo;USD,&rdquo; the Raw Vault stores &ldquo;USD.&rdquo; Mapping it to &ldquo;United States Dollar&rdquo; via a currency reference table is a Business Vault concern.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Why this matters for reloads:</strong> because the Raw Vault applies zero business rules, you can <strong>replay any load from staging</strong> and produce identical results. If a business rule changes, you only need to re-derive the Business Vault &mdash; not re-extract from the source. The Raw Vault is your permanent, unambiguous source of truth for the data as it was received.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: STAGING LAYER DESIGN
+       ============================================================ -->
+  <article class="concept" data-topic="staging-design" id="staging-design">
+    <p class="concept-num">Concept 02</p>
+    <h2>Staging Layer Design</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Before raw data enters the vault, it goes through a <strong>staging layer</strong> &mdash; a preparation room where two critical things are added to every row: a <strong>Hash Key</strong> (a fingerprint of the business key) and a <strong>LOAD_DATE</strong> timestamp. Nothing else is transformed. Think of staging as the security checkpoint at an airport &mdash; you&rsquo;re not changing the traveller; you&rsquo;re adding their boarding pass and stamping their time of arrival.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>What Staging Computes</h3>
+      <p>The staging table is <strong>transient</strong> &mdash; it is truncated before each load cycle and rebuilt from the latest source extract. It serves only to feed the Raw Vault load. It is never queried for reporting.</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column Added in Staging</th>
+          <th>Formula</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>HUB_CUSTOMER_HK</code></td>
+          <td><code>MD5(UPPER(TRIM(CUSTOMER_ID)))</code></td>
+          <td>Deterministic FK for Hub and Satellite joins</td>
+        </tr>
+        <tr>
+          <td><code>HASH_DIFF</code></td>
+          <td><code>MD5(CONCAT(COL1,'|',COL2,'|',COL3))</code></td>
+          <td>Change detection: compare to current satellite row</td>
+        </tr>
+        <tr>
+          <td><code>LOAD_DATE</code></td>
+          <td><code>CURRENT_TIMESTAMP()</code> (set once per batch)</td>
+          <td>Technical load timestamp for all rows in this batch</td>
+        </tr>
+        <tr>
+          <td><code>RECORD_SOURCE</code></td>
+          <td>Constant string e.g. <code>'CRM_SALESFORCE_V2'</code></td>
+          <td>Data lineage and audit trail</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Staging Layer: STG_CUSTOMER (Snowflake / ANSI)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- STG_CUSTOMER: staging view / table over raw source extract</span>
+<span class="cm">-- LOAD_DATE is a single constant for the entire batch execution</span>
+<span class="kw">CREATE OR REPLACE</span> VIEW STG_CUSTOMER <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="cm">-- Hash Keys computed here, once, used everywhere downstream</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(CUSTOMER_ID)))                    <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>,
+
+    <span class="cm">-- HashDiff: concat all payload columns with a separator</span>
+    <span class="cm">-- Use COALESCE so NULLs produce consistent hash inputs</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(FIRST_NAME,  <span class="str">''</span>) <span class="op">||</span> <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(LAST_NAME,   <span class="str">''</span>) <span class="op">||</span> <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(EMAIL,       <span class="str">''</span>) <span class="op">||</span> <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(PHONE,       <span class="str">''</span>) <span class="op">||</span> <span class="str">'|'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(COUNTRY_CODE,<span class="str">''</span>)
+    )                                                 <span class="kw">AS</span> <span class="str">HASH_DIFF</span>,
+
+    <span class="cm">-- Single batch timestamp: all rows in this load share the same LOAD_DATE</span>
+    <span class="str">'2024-03-15 08:00:00.000'</span>::TIMESTAMP             <span class="kw">AS</span> <span class="str">LOAD_DATE</span>,
+    <span class="str">'CRM_SALESFORCE_V2'</span>                               <span class="kw">AS</span> <span class="str">RECORD_SOURCE</span>,
+
+    <span class="cm">-- Raw source columns: no transformation, no business rules</span>
+    CUSTOMER_ID, FIRST_NAME, LAST_NAME,
+    EMAIL, PHONE, COUNTRY_CODE, CREATED_DATE
+<span class="kw">FROM</span> RAW_LANDING.CRM_CUSTOMER_EXTRACT;</pre>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p>
+        <strong>Critical: LOAD_DATE must be a single constant per batch, not <code>CURRENT_TIMESTAMP()</code> called per-row.</strong> If LOAD_DATE is computed per-row, two rows from the same source extract will have microsecond-different timestamps, making it impossible to identify the &ldquo;current&rdquo; record or reconstruct the vault state at a specific batch window. Set LOAD_DATE once at the pipeline start and pass it as a parameter to every staging query.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Staging Table vs Staging View</h3>
+      <p>You can implement the staging layer as either a materialised table (TRUNCATE then INSERT) or a view over the raw landing zone. The trade-off:</p>
+      <ul>
+        <li><strong>Materialised staging table:</strong> Hash computation happens once. All downstream vault loads (Hub, Links, multiple Satellites) read pre-computed hashes from the same table. More predictable performance. Required for parallel loading.</li>
+        <li><strong>Staging view:</strong> Hash is recomputed every time a vault load queries the view. Simpler deployment but can significantly increase compute cost when several Satellites share the same staging view.</li>
+      </ul>
+      <p>For production implementations, always materialise the staging layer.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: PARALLEL LOADING STRATEGIES
+       ============================================================ -->
+  <article class="concept" data-topic="parallel-loading" id="parallel-loading">
+    <p class="concept-num">Concept 03</p>
+    <h2>Parallel Loading Strategies</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        In a traditional ETL pipeline, you load one table, then the next. In Data Vault, the design deliberately enables <strong>all Hubs, all Links, and all Satellites to load simultaneously</strong>. A staging table is computed first, then 30 loads can run in parallel &mdash; no locks, no dependencies between them. This is why large DV implementations can load <strong>hundreds of tables in minutes</strong> instead of hours.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Why Parallel Loading Works in DV2</h3>
+      <p>
+        Three design properties make parallel loading safe without coordination:
+      </p>
+      <ul>
+        <li><strong>Idempotent inserts.</strong> Every load uses a <code>NOT EXISTS</code> or <code>LEFT JOIN / WHERE NULL</code> guard. Running the same load twice produces no duplicates &mdash; the second run finds existing keys and skips them. Multiple loaders can run without stepping on each other.</li>
+        <li><strong>No foreign key constraints enforced at load time.</strong> Data Vault does not enforce FK constraints as database-level constraints (they are logical). A Satellite can load before its Hub with no error; the Hub load following it will insert the key that the Satellite already references.</li>
+        <li><strong>Hashes eliminate lookup joins.</strong> The Hash Key is computed from the business key in staging. There is no need to look up a surrogate key from a parent table during loading &mdash; removing the inter-table dependency that serialises traditional ETL.</li>
+      </ul>
+    </div>
+
+    <!-- SVG: Parallel load flow -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 220" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Parallel loading: staging computed first, then all hubs, links, satellites load simultaneously">
+        <!-- Staging box -->
+        <rect x="10" y="80" width="160" height="60" rx="8" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.45)" stroke-width="1.8"/>
+        <text x="90" y="105" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="700" fill="#e8b84b">STG_CUSTOMER</text>
+        <text x="90" y="125" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.6)">Hash Keys + LOAD_DATE</text>
+        <text x="90" y="68" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.5)" letter-spacing="1">STEP 1: MATERIALISE</text>
+
+        <!-- Parallel arrows -->
+        <line x1="172" y1="95" x2="240" y2="55" stroke="rgba(34,211,200,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="238,50 251,55 238,60" fill="rgba(34,211,200,0.5)"/>
+        <line x1="172" y1="110" x2="240" y2="110" stroke="rgba(167,139,250,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="238,105 251,110 238,115" fill="rgba(167,139,250,0.5)"/>
+        <line x1="172" y1="125" x2="240" y2="165" stroke="rgba(232,184,75,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="238,160 251,165 238,170" fill="rgba(232,184,75,0.5)"/>
+
+        <!-- HUB box -->
+        <rect x="252" y="28" width="150" height="54" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="327" y="50" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#22d3c8">HUB_CUSTOMER</text>
+        <text x="327" y="72" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(34,211,200,0.55)">INSERT new BKs only</text>
+
+        <!-- LINK box -->
+        <rect x="252" y="96" width="150" height="54" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.35)" stroke-width="1.5"/>
+        <text x="327" y="118" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">LINK_CUST_ORDER</text>
+        <text x="327" y="140" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(167,139,250,0.55)">INSERT new relations</text>
+
+        <!-- SAT box -->
+        <rect x="252" y="154" width="150" height="54" rx="8" fill="rgba(232,184,75,0.07)" stroke="rgba(232,184,75,0.35)" stroke-width="1.5"/>
+        <text x="327" y="175" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#e8b84b">SAT_CUSTOMER_*</text>
+        <text x="327" y="197" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.55)">INSERT on HashDiff change</text>
+
+        <!-- Step 2 label -->
+        <text x="327" y="14" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.4)" letter-spacing="1">STEP 2: PARALLEL LOADS (simultaneous)</text>
+
+        <!-- More SATs parallel -->
+        <line x1="404" y1="55" x2="470" y2="55" stroke="rgba(232,184,75,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="468,50 481,55 468,60" fill="rgba(232,184,75,0.5)"/>
+        <rect x="482" y="28" width="220" height="54" rx="8" fill="rgba(232,184,75,0.05)" stroke="rgba(232,184,75,0.25)" stroke-width="1.2"/>
+        <text x="592" y="50" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" font-weight="700" fill="#e8b84b">SAT_CUSTOMER_DEMOGRAPHICS</text>
+        <text x="592" y="68" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" font-weight="700" fill="#e8b84b">SAT_CUSTOMER_CONTACT</text>
+        <text x="592" y="72" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.4)">+ SAT_CUSTOMER_FINANCIALS</text>
+        <text x="592" y="13" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.4)" letter-spacing="1">ALL SATELLITES LOAD SIMULTANEOUSLY</text>
+      </svg>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Hub Load (idempotent INSERT)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Hub load: insert new business keys only</span>
+<span class="cm">-- Safe to run in parallel with any Satellite or Link load</span>
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_CUSTOMER</span> (<span class="hub">HUB_CUSTOMER_HK</span>, CUSTOMER_BK, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>)
+<span class="kw">SELECT DISTINCT</span>
+    stg.<span class="hub">HUB_CUSTOMER_HK</span>,
+    stg.CUSTOMER_ID     <span class="kw">AS</span> CUSTOMER_BK,
+    stg.<span class="str">LOAD_DATE</span>,
+    stg.<span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span>  STG_CUSTOMER stg
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+    <span class="kw">WHERE</span> h.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> stg.<span class="hub">HUB_CUSTOMER_HK</span>
+);
+<span class="cm">-- This insert runs concurrently with SAT loads and LINK loads</span>
+<span class="cm">-- No locking across tables because each target table is independent</span></pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Orchestration pattern:</strong> materialise staging first (Step 1), then fire all Hub, Link, and Satellite loads in parallel fan-out (Step 2). Most orchestrators support this natively: Airflow with <code>TaskGroup</code>, dbt with parallel execution, Azure Data Factory with pipeline fan-out, or DBT with concurrent model execution. The key insight: no vault load in Step 2 reads from another vault table during its load &mdash; each reads only from staging.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: ERROR MART PATTERN
+       ============================================================ -->
+  <article class="concept" data-topic="error-mart" id="error-mart">
+    <p class="concept-num">Concept 04</p>
+    <h2>Error Mart Pattern</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        When source data arrives with problems &mdash; a customer ID that is NULL, an order amount that is negative, a date that is impossible &mdash; the Raw Vault still <strong>loads it unchanged</strong>. But it also <strong>flags the problem</strong> by writing an error record to a separate Error Mart table. The data is never discarded; you have the original in the vault AND a record of what was wrong, so data quality teams can fix the source and reprocess.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Two Rules of the Error Mart</h3>
+      <ul>
+        <li><strong>Rule 1: Never reject data from the Raw Vault.</strong> Even if a row is technically invalid, it goes into the Raw Vault. The vault&rsquo;s job is to receive, not to judge. Rejection at the vault layer causes data loss and breaks the audit trail.</li>
+        <li><strong>Rule 2: Always record the anomaly.</strong> Every row that fails a validation check writes a companion record to the Error Mart. The Error Mart is queryable, reportable, and actionable &mdash; it is the data quality dashboard for your engineers and data stewards.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Error Mart Table DDL</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="kw">CREATE TABLE</span> ERROR_MART.DQ_ERRORS (
+    ERROR_ID         <span class="typ">BIGINT</span>       <span class="kw">IDENTITY</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,   <span class="cm">-- batch that produced the error</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,   <span class="cm">-- origin system</span>
+    TARGET_TABLE     <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,   <span class="cm">-- e.g. 'HUB_CUSTOMER'</span>
+    BK_VALUE         <span class="typ">VARCHAR(500)</span>,             <span class="cm">-- the raw business key value</span>
+    ERROR_TYPE       <span class="typ">VARCHAR(50)</span>  <span class="kw">NOT NULL</span>,   <span class="cm">-- NULL_BK, INVALID_DATE, etc.</span>
+    ERROR_SEVERITY   <span class="typ">CHAR(1)</span>      <span class="kw">NOT NULL</span>,   <span class="cm">-- W=Warning, E=Error, F=Fatal</span>
+    ERROR_MESSAGE    <span class="typ">VARCHAR(2000)</span>,            <span class="cm">-- human-readable description</span>
+    RAW_ROW_JSON     <span class="typ">VARIANT</span>,                  <span class="cm">-- full source row snapshot</span>
+    RESOLVED_FLAG    <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'N'</span>,<span class="cm">-- Y when the root cause is fixed</span>
+    RESOLVED_DATE    <span class="typ">TIMESTAMP</span>    <span class="kw">NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_dq_errors <span class="kw">PRIMARY KEY</span> (ERROR_ID)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Writing to the Error Mart during Staging</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Step 1: load raw vault as normal (even bad rows)
+-- Step 2: in parallel, write anomalies to Error Mart</span>
+<span class="kw">INSERT INTO</span> ERROR_MART.DQ_ERRORS (
+    <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>, TARGET_TABLE,
+    BK_VALUE, ERROR_TYPE, ERROR_SEVERITY, ERROR_MESSAGE, RAW_ROW_JSON
+)
+<span class="kw">SELECT</span>
+    <span class="str">'2024-03-15 08:00:00'</span>::TIMESTAMP <span class="kw">AS</span> <span class="str">LOAD_DATE</span>,
+    <span class="str">'CRM_SALESFORCE_V2'</span>               <span class="kw">AS</span> <span class="str">RECORD_SOURCE</span>,
+    <span class="str">'HUB_CUSTOMER'</span>                    <span class="kw">AS</span> TARGET_TABLE,
+    <span class="fn">COALESCE</span>(CUSTOMER_ID, <span class="str">'[NULL]'</span>)  <span class="kw">AS</span> BK_VALUE,
+    <span class="kw">CASE</span>
+        <span class="kw">WHEN</span> CUSTOMER_ID <span class="kw">IS NULL</span>              <span class="kw">THEN</span> <span class="str">'NULL_BK'</span>
+        <span class="kw">WHEN</span> LENGTH(TRIM(CUSTOMER_ID)) <span class="op">=</span> <span class="num">0</span>    <span class="kw">THEN</span> <span class="str">'EMPTY_BK'</span>
+        <span class="kw">WHEN</span> CREATED_DATE <span class="op">&gt;</span> <span class="fn">CURRENT_DATE</span>()   <span class="kw">THEN</span> <span class="str">'FUTURE_DATE'</span>
+    <span class="kw">END</span>                                       <span class="kw">AS</span> ERROR_TYPE,
+    <span class="str">'E'</span>                                       <span class="kw">AS</span> ERROR_SEVERITY,
+    <span class="str">'Business key is null or empty'</span>           <span class="kw">AS</span> ERROR_MESSAGE,
+    <span class="fn">OBJECT_CONSTRUCT</span>(*)<span class="op">::</span>VARIANT            <span class="kw">AS</span> RAW_ROW_JSON
+<span class="kw">FROM</span> RAW_LANDING.CRM_CUSTOMER_EXTRACT
+<span class="kw">WHERE</span> CUSTOMER_ID <span class="kw">IS NULL</span>
+   <span class="kw">OR</span> LENGTH(TRIM(CUSTOMER_ID)) <span class="op">=</span> <span class="num">0</span>
+   <span class="kw">OR</span> CREATED_DATE <span class="op">&gt;</span> <span class="fn">CURRENT_DATE</span>();</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Architect note:</strong> the Error Mart is not a dump. Build a daily report from it: <em>errors by source system, errors by type, trending error rates</em>. Treat it as a <strong>data quality SLA dashboard</strong>. Source teams with rising error rates get notified. The Error Mart also enables safe source replays &mdash; filter the raw landing to exclude known-bad rows identified by the Error Mart, then reload the staging and vault for corrected data.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: FULL VS DELTA LOADING
+       ============================================================ -->
+  <article class="concept" data-topic="full-delta-loading" id="full-delta-loading">
+    <p class="concept-num">Concept 05</p>
+    <h2>Full vs Delta Loading</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A <strong>full load</strong> sends every row from the source every day &mdash; like re-photographing an entire album rather than just the new photos. A <strong>delta load</strong> sends only rows that changed since the last extract &mdash; just the new photos. Delta is faster, but harder to detect deletions. Data Vault handles both patterns cleanly because its insert-only, idempotent design means re-loading the same data never corrupts the vault.
+      </p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Full Load</th>
+          <th>Delta Load</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Data volume per batch</td>
+          <td>Entire source table</td>
+          <td>Only changed rows</td>
+        </tr>
+        <tr>
+          <td>Deletion detection</td>
+          <td style="color:var(--green)">Natural &mdash; absent rows = soft delete</td>
+          <td style="color:var(--amber)">Requires explicit CDC delete flag</td>
+        </tr>
+        <tr>
+          <td>Source system requirement</td>
+          <td>None &mdash; any system can do a full dump</td>
+          <td>Source must expose change timestamps or CDC log</td>
+        </tr>
+        <tr>
+          <td>Network and extract cost</td>
+          <td style="color:var(--coral)">High &mdash; scales with total table size</td>
+          <td style="color:var(--green)">Low &mdash; scales with change volume</td>
+        </tr>
+        <tr>
+          <td>Vault idempotency behaviour</td>
+          <td>Re-running inserts nothing new (HashDiff matches)</td>
+          <td>Re-running inserts nothing new (same guarantee)</td>
+        </tr>
+        <tr>
+          <td>Typical use case</td>
+          <td>Reference tables, small dimensions, initial load</td>
+          <td>Large fact-equivalent sources, high-velocity data</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>Detecting Soft Deletes with Full Loads</h3>
+      <p>
+        Full loads enable a powerful pattern: if a customer was in yesterday&rsquo;s full extract but is absent from today&rsquo;s, you can infer a soft delete. Implement this with an Effectivity Satellite on the entity&rsquo;s Hub, or with a dedicated <code>SAT_CUSTOMER_DELETION</code> satellite that tracks the deletion event.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Detecting Soft Deletes via Full Load Comparison</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Find HKs that had IS_ACTIVE='Y' but are absent from today's full extract</span>
+<span class="cm">-- These are candidates for soft deletion (apply grace period before closing)</span>
+<span class="kw">INSERT INTO</span> <span class="sat">SAT_CUSTOMER_ACTIVE_STATUS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>, <span class="str">HASH_DIFF</span>, <span class="str">RECORD_SOURCE</span>, IS_ACTIVE, DELETION_REASON
+)
+<span class="kw">SELECT</span>
+    sat.<span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="str">'2024-03-15 08:00:00'</span>::TIMESTAMP  <span class="kw">AS</span> <span class="str">LOAD_DATE</span>,
+    <span class="fn">MD5</span>(<span class="str">'N|SOFT_DELETE'</span>)              <span class="kw">AS</span> <span class="str">HASH_DIFF</span>,
+    <span class="str">'CRM_SALESFORCE_V2'</span>               <span class="kw">AS</span> <span class="str">RECORD_SOURCE</span>,
+    <span class="str">'N'</span>                               <span class="kw">AS</span> IS_ACTIVE,
+    <span class="str">'Absent from full extract'</span>        <span class="kw">AS</span> DELETION_REASON
+<span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_ACTIVE_STATUS</span> sat
+<span class="kw">WHERE</span> sat.IS_ACTIVE  <span class="op">=</span> <span class="str">'Y'</span>
+  <span class="kw">AND</span> sat.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+  <span class="kw">AND NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> STG_CUSTOMER stg
+    <span class="kw">WHERE</span> stg.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> sat.<span class="hub">HUB_CUSTOMER_HK</span>
+  );</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Grace period for deletions:</strong> apply the same caution as Effectivity Satellites &mdash; absent for one batch might mean a source outage, not a true deletion. Only mark as deleted after N consecutive missing batches. Store the absence count in the deletion satellite payload for auditability.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A — RAW VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A: Raw Vault Architecture</h2>
+
+    <p class="interview-section-label">Intermediate / Senior Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What business rules are permitted in the Raw Vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>None.</strong> The Raw Vault is a zero-business-rules zone. Every row is stored exactly as received from the source system. No data cleansing, no referential lookups, no derivations, no filtering of &ldquo;invalid&rdquo; rows.</p>
+          <p>The <em>only</em> transformations permitted in staging are: computing Hash Keys from business keys (a technical transformation, not a business rule), computing HashDiff from payload columns, stamping LOAD_DATE and RECORD_SOURCE. Everything else is a business rule that belongs in the Business Vault layer.</p>
+          <p>This constraint is what makes the Raw Vault an <strong>auditable, replayable archive</strong>. If a business rule changes, only the Business Vault needs to be recomputed &mdash; the Raw Vault data is permanent and unambiguous.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Why must LOAD_DATE be a single constant per batch, not <code>CURRENT_TIMESTAMP()</code> per row?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Three concrete reasons:</p>
+          <p><strong>(1) Snapshot consistency.</strong> All rows in one load batch represent a single logical snapshot of the source at one moment. If LOAD_DATE differs per row by milliseconds, you cannot reconstruct the vault state at a precise batch window &mdash; every query would need to know which rows are &ldquo;from the same batch&rdquo; via a separate batch metadata table.</p>
+          <p><strong>(2) Point-in-Time query correctness.</strong> PIT tables and as-of queries rely on filtering satellite history by LOAD_DATE. With per-row timestamps, a customer&rsquo;s satellite row might have LOAD_DATE 08:00:00.001 while another&rsquo;s is 08:00:00.999 &mdash; they appear to be from different batches even though they were loaded in the same pipeline run.</p>
+          <p><strong>(3) Idempotent reload safety.</strong> When re-running a batch (after a failure), you must reproduce the exact same LOAD_DATE. A pipeline that captures the batch start time as a parameter and passes it to all staging queries is deterministic; one that calls CURRENT_TIMESTAMP() per row produces different timestamps on re-run, creating duplicate satellite rows.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does the Error Mart differ from simply rejecting bad rows at the source?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Source-side rejection discards data permanently &mdash; there is no record that the bad row ever arrived. If the source is later corrected and replayed, there is no way to verify that the corrected row addresses the same anomaly.</p>
+          <p>The Error Mart approach:</p>
+          <p><strong>(1) Preserves the bad data in the Raw Vault.</strong> The row is loaded unchanged, giving you the exact payload as received &mdash; including any anomalous values that might be symptoms of a deeper source problem.</p>
+          <p><strong>(2) Creates an actionable audit record.</strong> The Error Mart record identifies the batch, the source, the specific validation that failed, and the raw row as JSON. Data stewards can investigate without needing to re-extract from the source.</p>
+          <p><strong>(3) Enables controlled reprocessing.</strong> After the source is fixed, you can re-extract just the corrected rows, filter the staging data, and reload only those satellite versions &mdash; without touching the original bad rows in the vault.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          When should you use a full load vs a delta load for a source system?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Use a <strong>full load</strong> when: (1) the source table is small (&lt;1M rows) and extract cost is negligible, (2) the source system cannot expose change timestamps or CDC logs, (3) you need soft-delete detection &mdash; absent rows in a full extract naturally indicate a deletion without requiring a delete flag, (4) it&rsquo;s the initial historical load.</p>
+          <p>Use a <strong>delta load</strong> when: (1) the source table is large and full extraction would be slow or expensive, (2) the source system exposes a reliable change timestamp column or CDC stream, (3) the data velocity is high (thousands of changes per minute), (4) network bandwidth between source and landing zone is constrained.</p>
+          <p>The Data Vault&rsquo;s idempotent INSERT patterns work equally well for both &mdash; the HashDiff check ensures that loading the same unchanged row twice (as in a full load re-sending stable data) inserts nothing new. The architecture imposes no preference; the decision is driven by source system capability and volume.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What makes Data Vault loading inherently parallel, and what is the one serialisation point?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Data Vault loading is parallel because: (1) Hash Keys are computed from business keys in staging &mdash; no lookup joins to parent tables during vault loading, (2) FK constraints are logical, not enforced by the database engine, so Satellite loads don&rsquo;t block on Hub loads, (3) every vault INSERT is idempotent, so concurrent writers on different target tables can&rsquo;t corrupt each other.</p>
+          <p>The <strong>one serialisation point</strong> is staging materialisation. All Hub, Link, and Satellite loads must read from a fully materialised staging table to get consistent hash values. If you fired Satellite loads before staging was complete, you&rsquo;d risk loading with partial or stale data. So the load order is strictly: (Step 1) materialise staging, then (Step 2) all vault loads in parallel. Within Step 2, there are no further ordering constraints.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 06 Key Takeaways</h3>
+      <ul>
+        <li>The Raw Vault stores data exactly as received &mdash; no business rules, no cleansing, no derivations. It is an insert-only, auditable archive. This property allows full replays when business rules change.</li>
+        <li>Staging materialises Hash Keys, HashDiff, a single LOAD_DATE constant, and RECORD_SOURCE. LOAD_DATE must be a pipeline parameter, not a per-row <code>CURRENT_TIMESTAMP()</code> call, to ensure snapshot consistency and idempotent reloads.</li>
+        <li>Parallel loading is the default pattern: materialise staging first, then fire all Hub, Link, and Satellite loads simultaneously. Hash Keys eliminate cross-table lookup dependencies; insert idempotency eliminates race conditions.</li>
+        <li>The Error Mart never rejects data from the vault. Bad rows are stored unchanged alongside an Error Mart record that captures the violation type, severity, and full row payload. Data quality is monitored and acted on separately from vault ingestion.</li>
+        <li>Full loads enable natural soft-delete detection (absent rows = deleted). Delta loads minimise extract volume but require source-side change tracking. Data Vault&rsquo;s idempotent inserts work correctly with both patterns.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module05.html">&#8592; Module 05: Satellites</a>
+  <a href="module07.html" class="next">Module 07: Business Vault &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 06 of 14 &mdash; Raw Vault Architecture
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('06', 6);</script>
+</body>
+</html>

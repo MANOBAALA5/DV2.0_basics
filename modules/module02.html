@@ -1,0 +1,692 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Core Modeling Concepts in Data Vault 2.0 — the 9 principles, business keys, hash keys, HashDiff, load date, record source, insert-only pattern, and interview Q&A.">
+<title>Module 02: Core Modeling Concepts | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html" class="active">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">02</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--teal);border-color:var(--teal-border);background:var(--teal-dim)">
+      Beginner &nbsp;&middot;&nbsp; Module 02 of 14
+    </span>
+    <h1>Introduction to<br><em style="color:var(--gold)">Core Modeling Concepts</em></h1>
+    <p class="mod-hero-desc">
+      The foundational rules and metadata patterns that govern every Data Vault 2.0 design decision. Master these and everything else makes sense.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>7 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~50 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Beginner</strong>Level</div>
+      <div class="mod-meta-item"><strong>Module 01</strong>Prereqs</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: THE 9 DV2 MODELING PRINCIPLES
+       ============================================================ -->
+  <article class="concept" data-topic="nine-principles" id="nine-principles">
+    <p class="concept-num">Concept 01</p>
+    <h2>The 9 DV2 Modeling Principles</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        Dan Linstedt formalized <strong>9 rules</strong> that every Data Vault design must follow. Think of them as the <em>"constitution"</em> of DV &mdash; they exist to guarantee auditability, agility, and parallel loading. No rule is optional. If you bend one, you no longer have a Data Vault.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>All 9 Principles Explained</h3>
+      <p>These principles are non-negotiable. Every table, every load pattern, every design decision must satisfy all nine simultaneously.</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Principle</th>
+          <th>What it means in practice</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--teal)">1</strong></td>
+          <td><strong>All tables must have a Load Date (LDTS) and Record Source (RSRC)</strong></td>
+          <td>Every single row in every Hub, Link, and Satellite carries a warehouse arrival timestamp and a source system identifier. No exceptions. These two columns are the foundation of auditability.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">2</strong></td>
+          <td><strong>All Hubs must have a business key and only a business key</strong></td>
+          <td>A Hub stores the natural business identifier and nothing else. No names, addresses, statuses, or any descriptive data. Those belong exclusively in Satellites. Violation of this rule is the most common DV design mistake.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">3</strong></td>
+          <td><strong>All Links must reference only Hash Keys from their participating Hubs</strong></td>
+          <td>A Link joins Hubs together using their Hash Keys as foreign keys. Links never store raw business keys directly &mdash; only the derived Hash Keys. This ensures referential integrity across the entire vault.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">4</strong></td>
+          <td><strong>All Satellites must reference their parent Hub or Link via Hash Key</strong></td>
+          <td>A Satellite hangs off exactly one parent: either a Hub (describing an entity) or a Link (describing a relationship). The connection is always through the Hash Key, never through raw business keys.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">5</strong></td>
+          <td><strong>Satellites store all descriptive attributes and history</strong></td>
+          <td>Every piece of descriptive, changing, or contextual information lives in Satellites. One row per version of the data, each with its own Load Date. This automatically produces complete, timestamped history.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">6</strong></td>
+          <td><strong>All data is insert-only &mdash; no updates, no deletes, ever</strong></td>
+          <td>The Raw Vault is immutable. New data is appended as new rows. Historical rows are never changed. This is what makes the vault a permanent, tamper-evident record of what every source system ever said.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">7</strong></td>
+          <td><strong>All load operations must be idempotent (safe to run twice)</strong></td>
+          <td>Running the same load job twice must produce exactly the same result as running it once. No duplicate rows, no errors. The HashDiff pattern on Satellites and NOT EXISTS checks on Hubs/Links enforce this.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">8</strong></td>
+          <td><strong>Business keys define the grain of a Hub &mdash; one BK = one row</strong></td>
+          <td>Each unique business key value gets exactly one row in its Hub, ever. Once loaded, a business key row is never moved, split, or merged. This fixed grain is what makes the vault a reliable integration anchor.</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--teal)">9</strong></td>
+          <td><strong>All relationships are stored in Links &mdash; never in Hubs or Satellites</strong></td>
+          <td>If two entities are related, that relationship belongs in a Link table. Hubs and Satellites must never contain foreign key columns that express relationships. This strict separation is what allows independent, parallel loading of all vault objects.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>The DV litmus test:</strong> If a design choice violates any of these 9 rules, it&apos;s not Data Vault 2.0 &mdash; it&apos;s something else. Use this checklist on every table you design, and review it again before every sprint review.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: BUSINESS KEYS — THE FOUNDATION
+       ============================================================ -->
+  <article class="concept" data-topic="business-keys" id="business-keys">
+    <p class="concept-num">Concept 02</p>
+    <h2>Business Keys &mdash; The Foundation</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        A Business Key is the <strong>real-world identifier your business uses</strong> for something &mdash; not a database-generated surrogate. The CustomerID in the CRM. The ISIN code for a financial instrument. The Part Number in the ERP. <em>This is the most important concept in all of Data Vault.</em> Get this wrong and everything built on top of it is wrong.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>What Makes a Valid Business Key</h3>
+      <p>A business key must satisfy all four of these criteria simultaneously:</p>
+      <ul>
+        <li><strong>Used by the business, not just IT</strong> &mdash; Business users, operational staff, or partner systems refer to this identifier. It appears in contracts, invoices, reports, or communications. It has meaning outside the database.</li>
+        <li><strong>Relatively stable over time</strong> &mdash; The key doesn&apos;t change frequently. Customer numbers may stay the same for decades. A column that changes every month is not a reliable BK.</li>
+        <li><strong>Unique within its domain</strong> &mdash; No two distinct real-world entities share the same BK value within the same source system context. Uniqueness may be partial (unique within region, within year) &mdash; in that case you need a composite BK.</li>
+        <li><strong>Meaningful to the source system</strong> &mdash; The source system can look this entity up using this key. It&apos;s how the system identifies the entity, not just an internal tracking number.</li>
+      </ul>
+
+      <h3>What is NOT a Valid Business Key</h3>
+      <ul>
+        <li><strong>Database sequence numbers / auto-increment PKs</strong> &mdash; These are generated by the database engine and have no meaning outside that specific database instance. If the database is rebuilt, the numbers change.</li>
+        <li><strong>Row IDs (ROWID, OID)</strong> &mdash; Physical storage identifiers. Meaningless after any data movement or reload.</li>
+        <li><strong>Surrogate keys generated during ETL</strong> &mdash; If your ETL tool generates a key that the business never sees, it&apos;s not a business key.</li>
+        <li><strong>Foreign keys that point to another surrogate</strong> &mdash; A FK to a database-generated PK is still not a BK; it&apos;s a database artifact.</li>
+      </ul>
+
+      <h3>Composite Business Keys</h3>
+      <p>
+        Sometimes no single column uniquely identifies an entity &mdash; you need a <strong>combination of columns</strong>. This is a composite business key. Common examples: <code>ORDER_DATE + ORDER_NUMBER</code> in legacy ERP systems that reset the order counter daily. <code>PLANT_CODE + MATERIAL_NUMBER</code> in SAP where the same material can exist in multiple plants with different codes.
+      </p>
+      <p>
+        When hashing a composite BK, always concatenate the component columns with a consistent separator before hashing. The separator must not appear in any component value, or use a delimiter unlikely to collide (e.g., <code>&apos;||&apos;</code>).
+      </p>
+
+      <h3>BK Standardization in Staging</h3>
+      <p>
+        Before a business key is hashed into a Hash Key, it must be standardized in the staging layer. Inconsistent normalization across loads is one of the top causes of phantom duplicates in Data Vault implementations.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; BK Normalization in Staging</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Staging: normalize business key before hashing</span>
+<span class="kw">SELECT</span>
+    <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(<span class="fn">COALESCE</span>(customer_id, <span class="str">'UNKNOWN'</span>))) <span class="kw">AS</span> <span class="str">CUSTOMER_BK</span>,
+    <span class="cm">-- Always handle NULLs: a NULL BK would hash to the same value</span>
+    <span class="cm">-- for every NULL row, causing catastrophic data collisions</span>
+    <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(<span class="fn">COALESCE</span>(order_date,   <span class="str">''</span>)))     <span class="kw">AS</span> <span class="str">ORDER_DATE_BK</span>,
+    <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(<span class="fn">COALESCE</span>(order_number, <span class="str">''</span>)))     <span class="kw">AS</span> <span class="str">ORDER_NUMBER_BK</span>
+<span class="kw">FROM</span> source_crm.customers
+<span class="kw">WHERE</span> customer_id <span class="kw">IS NOT NULL</span>  <span class="cm">-- hard filter: never load NULL BKs</span>
+  <span class="kw">AND</span> <span class="fn">TRIM</span>(customer_id) <span class="op">!=</span> <span class="str">''</span>;  <span class="cm">-- also filter empty string BKs</span></pre>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>Critical warning:</strong> Never load a NULL business key into a Hub. A NULL BK would hash to the same value as every other NULL BK, causing all entities with missing keys to collapse into one Hub row. Filter with <code>WHERE BK IS NOT NULL</code> in staging &mdash; this is a hard stop, not a suggestion. Also filter empty strings: an empty-string BK is just as dangerous as NULL.</p>
+    </div>
+
+    <div class="tip">
+      <p><strong>BK discovery tip:</strong> When analyzing a new source system, ask the business team: &ldquo;If you had to look up this entity in the source system without logging into the database, what would you type?&rdquo; Their answer is almost always the business key.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: HASHKEY GENERATION
+       ============================================================ -->
+  <article class="concept" data-topic="hashkey" id="hashkey">
+    <p class="concept-num">Concept 03</p>
+    <h2>HashKey Generation</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        Instead of using database-generated identity columns (which break across systems), Data Vault <strong>hashes the business key</strong> to create a deterministic surrogate key. <em>Same business key = same hash, every time, from any system.</em> This enables parallel loading without coordination &mdash; you can calculate the Hash Key in staging on any server and know it will match what&apos;s already in the Hub.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Why Not IDENTITY or SEQUENCE Columns?</h3>
+      <p>Database-generated surrogate keys have three fatal problems in a Data Vault context:</p>
+      <ul>
+        <li><strong>Non-deterministic</strong> &mdash; The value depends on when the row is inserted and the state of the sequence counter. Rebuilding a table produces different surrogate values, breaking all foreign key relationships.</li>
+        <li><strong>Cannot be pre-calculated in staging</strong> &mdash; You can&apos;t know the surrogate value before the row is inserted, so staging SQL cannot reference it. HashKeys can be computed in a single SELECT before any INSERT occurs.</li>
+        <li><strong>Contention on parallel loads</strong> &mdash; Sequence generators are a serialization bottleneck. Multiple parallel loading threads compete for the next sequence value, destroying the parallel loading advantage DV is designed to deliver.</li>
+      </ul>
+
+      <h3>MD5 vs SHA-256</h3>
+      <p>
+        Both are valid hashing algorithms for Data Vault. The trade-off is between speed and collision resistance:
+      </p>
+      <ul>
+        <li><strong>MD5 (32 hex characters / 16 bytes)</strong> &mdash; Faster to compute, smaller storage footprint, widely supported. Theoretical collision risk is extremely low for business key values. Adequate for most implementations. The standard choice in many enterprise DV deployments.</li>
+        <li><strong>SHA-256 (64 hex characters / 32 bytes)</strong> &mdash; Cryptographically stronger, zero known collisions for practical inputs, preferred for financial services, regulatory environments, and high-volume vaults with billions of rows. The collision probability at scale justifies the extra storage cost.</li>
+      </ul>
+      <p>
+        <strong>Recommendation:</strong> Use SHA-256 for any environment with regulatory audit requirements (banking, insurance, healthcare) or expected row counts exceeding 1 billion. Use MD5 elsewhere for simplicity.
+      </p>
+
+      <h3>The Hashing Formula</h3>
+      <p>
+        <code>HK = HASH(UPPER(TRIM(BK)))</code> &mdash; always normalize <em>before</em> hashing. The normalization step is not optional: if one load process uses <code>UPPER(TRIM())</code> and another does not, you will generate two different hash values for the same business key, creating phantom duplicate Hub rows.
+      </p>
+      <p>
+        For composite keys: concatenate component values with a consistent separator that cannot appear in data: <code>HASH(BK1 || &apos;||&apos; || BK2)</code>. Document your separator convention and never change it.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; HashKey Generation Patterns</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Single business key (MD5 and SHA-256 variants)</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(customer_id)))          <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="fn">SHA2</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(customer_id)), <span class="num">256</span>)    <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK_SHA256</span>
+<span class="kw">FROM</span> raw_landing.crm_contacts;
+
+<span class="cm">-- Composite business key (always use consistent separator)</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(order_date))   <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(order_number))
+    ) <span class="kw">AS</span> <span class="hub">HUB_ORDER_HK</span>
+<span class="kw">FROM</span> raw_landing.erp_orders;
+
+<span class="cm">-- In Snowflake (preferred syntax with NVL for NULL safety)</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(<span class="fn">NVL</span>(customer_id, <span class="str">'-1'</span>)))) <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">FROM</span> raw_landing.crm_contacts
+<span class="kw">WHERE</span> customer_id <span class="kw">IS NOT NULL</span>;
+
+<span class="cm">-- Link hash key: hash of ALL participating hub business keys</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(customer_id)) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(order_id))
+    ) <span class="kw">AS</span> <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>,
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(customer_id))) <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(order_id)))    <span class="kw">AS</span> <span class="hub">HUB_ORDER_HK</span>
+<span class="kw">FROM</span> raw_landing.erp_orders;</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128279;</span>
+      <p><strong>Cross-system integration magic:</strong> When the CRM and ERP both know about the same customer, their Hash Keys will automatically match in the vault &mdash; without any lookup table or central key registry &mdash; as long as both systems are loading the same UPPER(TRIM(BK)). This is the core mechanism that enables Data Vault to integrate data from multiple source systems.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: HASHDIFF FOR CHANGE DETECTION
+       ============================================================ -->
+  <article class="concept" data-topic="hashdiff" id="hashdiff">
+    <p class="concept-num">Concept 04</p>
+    <h2>HashDiff for Change Detection</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        When loading a Satellite, we need to know if the incoming row is <strong>actually different</strong> from what we last stored. Instead of comparing 20+ columns one by one, we <em>hash all the payload columns together</em> into a single &ldquo;fingerprint&rdquo; (HashDiff). If the fingerprint matches what&apos;s already stored, skip the insert. If it&apos;s different, something changed &mdash; insert a new row.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>How HashDiff Works</h3>
+      <p>
+        The formula is: <code>HASHDIFF = HASH(concatenation of all payload columns, in a fixed order)</code>
+      </p>
+      <p>
+        The HashDiff is computed in the staging layer alongside Hash Keys, before any vault loading begins. It is stored in every Satellite row as a metadata column. During load, it&apos;s the single comparison that determines whether a new row needs to be inserted.
+      </p>
+
+      <h3>Why Column Order Matters</h3>
+      <p>
+        The hash of <code>(&apos;Alice&apos; || &apos;Smith&apos;)</code> is different from the hash of <code>(&apos;Smith&apos; || &apos;Alice&apos;)</code>. Column order in the concatenation must be <strong>fixed, documented, and consistent across all loads</strong>. Any change to column order would invalidate every existing HashDiff value in the Satellite, causing every row to appear as &ldquo;changed&rdquo; and triggering a mass duplicate insert. Document your column order in metadata and enforce it through code generation or templates.
+      </p>
+
+      <h3>Handling NULLs in HashDiff</h3>
+      <p>
+        NULL concatenation is treacherous: in SQL, <code>NULL || &apos;anything&apos; = NULL</code>. If any payload column is NULL and you don&apos;t handle it, your entire HashDiff becomes NULL. Use <code>COALESCE(column, &apos;NULL_SUBSTITUTION_TOKEN&apos;)</code> for every column. The substitution token must be a string that cannot plausibly appear as actual data (e.g., <code>&apos;^^&apos;</code> or <code>&apos;~NULL~&apos;</code>) to avoid false collision with real empty-string values.
+      </p>
+
+      <h3>Performance Advantage</h3>
+      <p>
+        Instead of a WHERE clause comparing N columns at load time, the Satellite load becomes a simple single-column comparison (<code>sat.HASH_DIFF != src.HASH_DIFF</code>). This makes the load logic identical regardless of whether a Satellite has 5 columns or 50. On cloud platforms, this single comparison is extremely cache-friendly and scales linearly with row count.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; HashDiff Computation in Staging</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- HashDiff computation in staging layer</span>
+<span class="cm">-- ^^ is the NULL substitution token (unlikely to appear in data)</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(first_name)),  <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(last_name)),   <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(email)),       <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">CAST</span>(date_of_birth <span class="kw">AS</span> <span class="typ">VARCHAR</span>), <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(country_code)), <span class="str">'^^'</span>)
+        <span class="cm">-- Column order is FIXED: changing it invalidates all existing HashDiffs</span>
+    ) <span class="kw">AS</span> <span class="str">HASH_DIFF</span>,
+    <span class="cm">-- Pre-compute the Hash Key too</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(contact_id))) <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>,
+    first_name, last_name, email, date_of_birth, country_code
+<span class="kw">FROM</span> raw_landing.crm_contacts
+<span class="kw">WHERE</span> contact_id <span class="kw">IS NOT NULL</span>;
+
+<span class="cm">-- Satellite load: only insert when HashDiff differs from current record</span>
+<span class="kw">INSERT INTO</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+<span class="kw">SELECT</span>
+    src.<span class="hub">HUB_CUSTOMER_HK</span>,
+    src.LOAD_DATE,
+    <span class="kw">NULL</span> <span class="kw">AS</span> LOAD_END_DATE,
+    src.<span class="str">HASH_DIFF</span>,
+    src.RECORD_SOURCE,
+    src.first_name, src.last_name, src.email,
+    src.date_of_birth, src.country_code
+<span class="kw">FROM</span> stg_customer_demographics src
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> sat
+       <span class="kw">ON</span> sat.<span class="hub">HUB_CUSTOMER_HK</span> = src.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> sat.LOAD_END_DATE <span class="kw">IS NULL</span>         <span class="cm">-- current (open) record only</span>
+<span class="kw">WHERE</span> sat.<span class="str">HASH_DIFF</span> <span class="kw">IS NULL</span>             <span class="cm">-- no existing record yet, OR</span>
+   <span class="kw">OR</span> sat.<span class="str">HASH_DIFF</span> <span class="op">!=</span> src.<span class="str">HASH_DIFF</span>;    <span class="cm">-- payload has changed</span></pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Metadata tip:</strong> Store your HashDiff column order as metadata (in a config table or dbt YAML). Every satellite&apos;s column list should be auto-generated from this metadata, not hand-coded in each load script. This is the first step toward a fully automated, metadata-driven DV pipeline.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: LOAD DATE & RECORD SOURCE
+       ============================================================ -->
+  <article class="concept" data-topic="ldts-rsrc" id="ldts-rsrc">
+    <p class="concept-num">Concept 05</p>
+    <h2>Load Date &amp; Record Source</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        Every single row in every vault table must carry two mandatory metadata columns: <strong>LOAD_DATE</strong> (when did this data arrive in the warehouse?) and <strong>RECORD_SOURCE</strong> (which system sent it?). These two columns make the difference between &ldquo;a data warehouse&rdquo; and <em>&ldquo;an auditable data vault.&rdquo;</em>
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>LOAD_DATE: The Arrival Timestamp</h3>
+      <p>
+        LOAD_DATE records <strong>when the data arrived in the warehouse</strong>, not when the business event occurred. This distinction is critical and commonly misunderstood.
+      </p>
+      <ul>
+        <li><strong>Set once in the staging layer</strong> &mdash; Assign <code>CURRENT_TIMESTAMP()</code> or a batch-controlled timestamp at the beginning of each load. Propagate this value unchanged through all Hub, Link, and Satellite loads for that batch.</li>
+        <li><strong>Never update it</strong> &mdash; LOAD_DATE is immutable. Once written, it never changes. It is part of the primary key for Satellites.</li>
+        <li><strong>Use a batch timestamp for consistency</strong> &mdash; Using <code>CURRENT_TIMESTAMP()</code> individually per row means rows loaded a microsecond apart get different LOAD_DATEs. Instead, capture the batch start time once and use that single value for all rows in the batch.</li>
+        <li><strong>Business event time is NOT LOAD_DATE</strong> &mdash; If a customer changed their address on Jan 1 but you didn&apos;t receive the extract until Jan 5, LOAD_DATE = Jan 5. The effective date (Jan 1) goes in a satellite payload column.</li>
+      </ul>
+
+      <h3>RECORD_SOURCE: The Lineage Trail</h3>
+      <p>
+        RECORD_SOURCE is a free-text string identifying exactly which source system provided this row. It is the single most powerful debugging and compliance tool in the vault.
+      </p>
+      <ul>
+        <li><strong>Naming convention</strong>: <code>SYSTEM.SUBSYSTEM.TABLE</code> &mdash; for example, <code>&apos;CRM.SALESFORCE.CONTACT_V2&apos;</code>, <code>&apos;ERP.SAP.CUSTOMERS&apos;</code>, <code>&apos;WEB.ADOBE.CLICKSTREAM&apos;</code>. Be specific enough that a DBA can trace the value back to an exact pipeline and source object.</li>
+        <li><strong>Debugging data quality</strong> &mdash; When a value looks wrong, the RECORD_SOURCE tells you exactly which system to investigate.</li>
+        <li><strong>Conflict resolution</strong> &mdash; When two source systems both have data for the same customer but disagree, RECORD_SOURCE tells you which system to trust for which attributes.</li>
+        <li><strong>Regulatory compliance</strong> &mdash; Auditors frequently ask &ldquo;which system says this?&rdquo; RECORD_SOURCE answers that question directly, without any reverse-engineering.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Staging Layer Metadata Pattern</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Staging layer: add vault metadata before loading</span>
+<span class="cm">-- Everything computed here; vault loads are pure INSERT...SELECT</span>
+<span class="kw">SELECT</span>
+    s.*,
+
+    <span class="cm">-- Set once per batch; all rows in this batch share this timestamp</span>
+    <span class="fn">CURRENT_TIMESTAMP</span>()              <span class="kw">AS</span> <span class="str">LOAD_DATE</span>,
+    <span class="str">'CRM.SALESFORCE.CONTACT_V2'</span>      <span class="kw">AS</span> <span class="str">RECORD_SOURCE</span>,
+
+    <span class="cm">-- Pre-compute the Hub Hash Key</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(s.contact_id)))   <span class="kw">AS</span> <span class="hub">HUB_CUSTOMER_HK</span>,
+
+    <span class="cm">-- Pre-compute the HashDiff for SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(s.first_name)), <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(s.last_name)),  <span class="str">'^^'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(s.email)),      <span class="str">'^^'</span>)
+    )                                <span class="kw">AS</span> <span class="str">HASH_DIFF</span>
+
+<span class="kw">FROM</span> raw_landing.crm_contacts s
+<span class="kw">WHERE</span> s.contact_id <span class="kw">IS NOT NULL</span>  <span class="cm">-- filter NULL BKs early, in staging</span>
+  <span class="kw">AND</span> <span class="fn">TRIM</span>(s.contact_id) <span class="op">!=</span> <span class="str">''</span>;
+
+<span class="cm">-- The downstream Hub load then becomes simply:</span>
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_CUSTOMER</span> (HUB_CUSTOMER_HK, CUSTOMER_BK, LOAD_DATE, RECORD_SOURCE)
+<span class="kw">SELECT</span> <span class="hub">HUB_CUSTOMER_HK</span>, contact_id, <span class="str">LOAD_DATE</span>, <span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span> stg_crm_contacts
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+    <span class="kw">WHERE</span>  h.<span class="hub">HUB_CUSTOMER_HK</span> = stg_crm_contacts.<span class="hub">HUB_CUSTOMER_HK</span>
+);</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128203;</span>
+      <p><strong>Architecture principle:</strong> The staging layer is the <em>only place</em> where <code>CURRENT_TIMESTAMP()</code> and source system literals are used. Every downstream vault load is a pure <code>INSERT...SELECT</code> from staging. This means vault loads are stateless, repeatable, and trivially testable.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: THE INSERT-ONLY PATTERN
+       ============================================================ -->
+  <article class="concept" data-topic="insert-only" id="insert-only">
+    <p class="concept-num">Concept 06</p>
+    <h2>The Insert-Only Pattern</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        In Data Vault, you <strong>never UPDATE a row</strong>. You <strong>never DELETE a row</strong>. You only ever <strong>INSERT new rows</strong>. If something changes, you add a new row with a new timestamp. If something is &ldquo;deleted&rdquo; in the source system, you either record a soft-delete satellite row or simply stop seeing that key in future loads &mdash; which itself becomes part of the history.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Why Insert-Only?</h3>
+      <ul>
+        <li><strong>Updates destroy the audit trail</strong> &mdash; The moment you UPDATE a row, you permanently lose what was there before. There is no way to prove what the data said yesterday. This is catastrophic for regulatory compliance and data trust.</li>
+        <li><strong>Deletes lose data forever</strong> &mdash; DELETE is irreversible in a traditional sense. In a vault, &ldquo;deleted&rdquo; data is still needed: auditors want to know it existed, machine learning models need historical patterns, business analysis requires full timelines.</li>
+        <li><strong>Inserts are idempotent and parallelizable</strong> &mdash; INSERT...SELECT with a NOT EXISTS guard is safe to run twice (idempotent) and does not require row-level locking. Multiple loading threads can INSERT into the same table simultaneously without coordination.</li>
+      </ul>
+
+      <h3>Handling Source System Deletes</h3>
+      <p>
+        When a source system &ldquo;deletes&rdquo; a record, Data Vault responds in one of two ways, depending on whether the source system signals the deletion explicitly:
+      </p>
+      <ul>
+        <li><strong>Explicit deletion signal</strong> &mdash; Add a <em>Status Tracking Satellite</em> with an <code>IS_DELETED</code> flag column. When the source marks a record as deleted, insert a new Satellite row with <code>IS_DELETED = &apos;Y&apos;</code> and a new LOAD_DATE. The full history remains; the deletion is just another data point.</li>
+        <li><strong>Implicit deletion (record stops appearing)</strong> &mdash; Use an <em>Effectivity Satellite</em> that tracks whether the entity was present in the latest extract. When the record disappears from the source file, close the effectivity satellite row with a <code>LOAD_END_DATE</code>. The absence of data is itself recorded as data.</li>
+      </ul>
+
+      <h3>Handling Corrections</h3>
+      <p>
+        If incorrect data was loaded, <strong>do not update or delete the wrong row</strong>. Instead, insert a new Satellite row with the corrected data and the current LOAD_DATE. The old incorrect row remains permanently as a record of what was believed to be true at that time &mdash; which may itself be needed to prove what decisions were made based on that data.
+      </p>
+
+      <h3>Performance at Scale</h3>
+      <p>
+        INSERT is faster than UPDATE/MERGE at scale on cloud columnar databases. Snowflake, BigQuery, and Databricks are all optimized for bulk inserts into append-friendly table structures. UPDATE requires locating existing rows, acquiring locks, and rewriting blocks &mdash; a much more expensive operation on a columnar store.
+      </p>
+    </div>
+
+    <div class="bpm-grid">
+      <div class="bp-box">
+        <h4>&#10003; Best Practices</h4>
+        <ul>
+          <li>Always use <code>INSERT...SELECT</code> for all vault loading</li>
+          <li>Use MERGE only in staging layer (never in vault)</li>
+          <li>Let the HashDiff pattern prevent duplicate Satellite inserts</li>
+          <li>Use NOT EXISTS guards on Hub and Link inserts</li>
+          <li>Record deletions as new Satellite rows with a status flag</li>
+          <li>Document your insert-only policy in team standards</li>
+        </ul>
+      </div>
+      <div class="mistake-box">
+        <h4>&#10007; Common Mistakes</h4>
+        <ul>
+          <li>Using UPDATE to &ldquo;fix&rdquo; data already in the vault</li>
+          <li>Deleting rows because &ldquo;it was a mistake&rdquo; or &ldquo;wrong data&rdquo;</li>
+          <li>Using TRUNCATE + reload for Raw Vault tables</li>
+          <li>Running a MERGE directly against Hub or Satellite tables</li>
+          <li>Skipping the NOT EXISTS guard (causes duplicates on re-run)</li>
+          <li>Treating insert-only as optional for &ldquo;small tables&rdquo;</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>The golden rule:</strong> If you find yourself writing an UPDATE or DELETE statement against a Raw Vault table, stop and reconsider the design. There is always an insert-only alternative that preserves history. The only valid reason to UPDATE a vault row is a catastrophic load error discovered within the same batch window &mdash; and even then, it should be documented as an exceptional event.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 7: INTERVIEW Q&A — CORE MODELING
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 07</p>
+    <h2>Interview Q&amp;A: Core Modeling</h2>
+
+    <p class="interview-section-label">Junior / Mid-Level Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a business key and why is it important in Data Vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>The business key is the <strong>natural identifier used by the business</strong> to refer to a real-world entity. It&apos;s the cornerstone of Data Vault because Hubs are organized around BKs, Hash Keys are deterministically derived from BKs, and all integration across sources happens by matching BKs. Without a reliable BK, you cannot build a Hub &mdash; and without a Hub, you have no Data Vault.</p>
+          <p>A valid business key must satisfy four criteria: (1) it must not be NULL, (2) it must be unique within its domain, (3) it must be relatively stable over time, and (4) it must be meaningful to the source system &mdash; not just an internal database surrogate. Auto-increment PKs and database sequence numbers fail criterion (4) and are not valid business keys.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          Why does Data Vault use hash keys instead of sequence-generated surrogate keys?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Three reasons:</p>
+          <p><strong>(1) Determinism:</strong> The same BK always hashes to the same HK, so you can compute the HK in the staging layer on any server, at any time, without coordination. The value is guaranteed before INSERT.</p>
+          <p><strong>(2) Parallel loading:</strong> No identity column means no sequence contention. Multiple loading threads can INSERT into the same Hub simultaneously &mdash; each thread independently computes the same HK for the same BK. This is the mechanism that enables Data Vault&apos;s parallel loading architecture.</p>
+          <p><strong>(3) Cross-system joins:</strong> If two source systems both know about the same customer, their Hash Keys will match automatically when their BKs match, enabling integration without a central key registry or lookup table. This is how Data Vault integrates data across source systems without explicit mapping tables.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          How does HashDiff work and what problem does it solve?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>HashDiff is a hash of all payload columns in a Satellite row, computed in the staging layer before any vault loading begins. When loading a Satellite, you compare the incoming HashDiff to the current satellite record&apos;s HashDiff. If they match, the data hasn&apos;t changed &mdash; skip the insert. If they differ, the data has changed &mdash; insert a new row.</p>
+          <p>The problem it solves is the <strong>expensive column-by-column comparison problem</strong>: instead of comparing 30 individual columns between the incoming row and the current satellite record, you compare exactly one hash value. This also makes Satellite load logic identical regardless of how many columns the Satellite has &mdash; the SQL pattern is the same for 5 columns and for 50 columns.</p>
+          <p>Critical implementation detail: all payload columns must be wrapped in <code>COALESCE(col, &apos;NULL_TOKEN&apos;)</code> before concatenation, because NULL concatenation in SQL returns NULL, which would break the comparison.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          What&apos;s the difference between LOAD_DATE and an event timestamp?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>LOAD_DATE</strong> is the <em>warehouse arrival time</em> &mdash; when the data landed in our system during an ETL/ELT batch. It answers the question: &ldquo;When did <em>we</em> learn about this?&rdquo;</p>
+          <p>An <strong>event timestamp</strong> (sometimes called &ldquo;effective date,&rdquo; &ldquo;business date,&rdquo; or &ldquo;as-of date&rdquo;) is when the business event actually occurred. It answers: &ldquo;When did <em>this happen</em>?&rdquo;</p>
+          <p>These are different! Example: a customer changed their address on Jan 1 (event timestamp), but the source system&apos;s daily extract didn&apos;t arrive until Jan 5 (LOAD_DATE). LOAD_DATE = Jan 5 is what goes in the mandatory vault metadata columns. The effective date = Jan 1 goes in a satellite payload column if the business needs it for as-of queries.</p>
+          <p>Confusing these two timestamps is one of the most common errors in first-time DV implementations and leads to incorrect point-in-time analysis.</p>
+        </div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-header">
+          Can you explain the insert-only principle and what happens when source data is &ldquo;deleted&rdquo;?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>The Raw Vault never deletes or updates rows. Every change to data produces a new INSERT. This preserves a complete, tamper-evident record of everything every source system ever said, at every point in time.</p>
+          <p>When a source system deletes a record, there are two approaches:</p>
+          <p><strong>(1) Ghost / soft-delete pattern:</strong> Add a Status Tracking Satellite row with an <code>IS_DELETED = &apos;Y&apos;</code> flag and a new LOAD_DATE. The satellite history now shows exactly when the entity was marked as deleted, by which source system. Future loads that do not see the entity simply don&apos;t insert a new row &mdash; the last row with IS_DELETED = Y remains the current state.</p>
+          <p><strong>(2) Effectivity Satellite pattern:</strong> Use an Effectivity Satellite that tracks whether the entity was present in the latest extract. When the source stops sending the record, close the effectivity satellite row. The absence of data is itself data, and the effectivity satellite records the timeline of presence and absence.</p>
+          <p>Both approaches preserve full history. The choice depends on whether the source system explicitly signals deletions (approach 1) or simply stops including the record in extracts (approach 2).</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="interview-section-label">Senior / Architect Level Questions</p>
+
+    <div class="accordion">
+      <div class="acc-item">
+        <div class="acc-header">
+          How do you handle NULL business keys? What are the risks?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>NULL BKs must be <strong>filtered out in staging before vault loading</strong> &mdash; this is a hard stop, not optional and not a best-practice suggestion. It is a fundamental requirement.</p>
+          <p>The risk: <code>HASH(NULL)</code> behavior depends on the database. In most systems it returns NULL (which cannot be a primary key and causes insert failures) or a constant hash of the empty string (which would merge all NULL-key records into a single Hub row, causing complete data integrity collapse). In either case, you cannot distinguish between two different entities that both had NULL as their BK.</p>
+          <p><strong>Implementation:</strong> Filter with <code>WHERE BK IS NOT NULL AND TRIM(BK) != &apos;&apos;</code> in the staging query. This prevents NULL and empty-string BKs from ever reaching the vault.</p>
+          <p><strong>For genuinely unknown BKs:</strong> If a record legitimately has an unknown or missing identifier, use a <em>Ghost Record</em>: assign BK = <code>&apos;UNKNOWN&apos;</code> or <code>&apos;-1&apos;</code> and document this as a conscious design decision. The ghost record will have its own Hub row and can be linked to data that couldn&apos;t be attributed to a real entity. This is different from accidentally loading a NULL &mdash; it is an explicit design choice with a known meaning.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 02 Key Takeaways</h3>
+      <ul>
+        <li>The 9 DV2 Principles are non-negotiable. Any design that violates even one of them is not Data Vault &mdash; use them as a checklist for every table you design.</li>
+        <li>Business keys are the foundation of every Hub. They must be non-NULL, unique within their domain, relatively stable, and meaningful to the source system. Auto-increment database PKs are never valid BKs.</li>
+        <li>Hash Keys are deterministic surrogates derived from normalized (UPPER + TRIM) business keys. The same BK always produces the same HK, enabling parallel loading without coordination and automatic cross-system integration.</li>
+        <li>HashDiff is a hash of all payload columns in a Satellite, computed in staging with consistent column order and NULL substitution tokens. It enables single-value change detection instead of expensive column-by-column comparison.</li>
+        <li>LOAD_DATE is the warehouse arrival timestamp &mdash; not the business event time. RECORD_SOURCE is the source system identifier. Both are mandatory on every vault row and are set exactly once, in the staging layer.</li>
+        <li>The Raw Vault is insert-only forever. Source deletions become new Satellite rows. Corrections become new Satellite rows. Nothing is ever updated or deleted. This is what makes the vault an auditable, regulatory-grade record of enterprise data history.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module01.html">&#8592; Module 01: Introduction to DV2</a>
+  <a href="module03.html" class="next">Module 03: Hubs &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 02 of 14 &mdash; Core Modeling Concepts
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('02', 7);</script>
+</body>
+</html>

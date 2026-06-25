@@ -1,0 +1,782 @@
+﻿
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interview Mastery — Data Vault 2.0 interview questions by seniority level, live SQL challenges, system design problems, and CDVDM certification preparation.">
+<title>Module 14: Interview Mastery | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html" class="active">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">14</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--purple);border-color:var(--purple-border);background:var(--purple-dim)">
+      Architect &nbsp;&middot;&nbsp; Module 14 of 14
+    </span>
+    <h1>Interview<br><em style="color:var(--gold)">Mastery</em></h1>
+    <p class="mod-hero-desc">
+      Everything you've learned, tested under pressure. This module covers the most common Data Vault interview questions by seniority level, live SQL challenges, system design problems, and CDVDM certification preparation.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~75 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Architect</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;13</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: JUNIOR / MID-LEVEL INTERVIEW QUESTIONS
+       ============================================================ -->
+  <article class="concept" data-topic="junior-questions" id="junior-questions">
+    <p class="concept-num">Concept 01</p>
+    <h2>Junior / Mid-Level Interview Questions</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Junior and mid-level DV interviews test whether you understand the fundamentals: what are the three vault objects, what goes in each, what is a business key, what does insert-only mean, and can you explain HashDiff. These questions are direct &mdash; focus on <strong>clear, concise answers</strong>.
+      </p>
+    </div>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Explain Data Vault 2.0 to someone who knows Kimball dimensional modeling.
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Both store enterprise data for analytics, but they take different approaches. <strong>Kimball optimizes for query performance</strong>: you design facts and dimensions for the reports you expect. <strong>DV optimizes for integration and auditability</strong>: you store everything in a normalized, source-faithful form first (Raw Vault), then build reporting structures on top (Information Marts).</p>
+          <p>Key differences: DV is insert-only (Kimball uses SCD2 updates), DV tracks full history automatically for free (Kimball requires SCD design), DV can add new sources without redesign (Kimball often requires schema changes), and DV separates integration from reporting (Kimball mixes them).</p>
+          <p>For someone who knows Kimball: think of the Raw Vault as an SCD2 store for every entity and relationship simultaneously, with automatic lineage.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What are the three main objects in Data Vault and what does each store?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Hub, Link, Satellite.</strong></p>
+          <p><strong>Hub:</strong> stores unique business keys &mdash; the identifiers the business uses for real-world entities (CustomerID, ProductSKU). One row per unique entity, insert-only, no descriptive data.</p>
+          <p><strong>Link:</strong> stores relationships between hubs &mdash; the fact that two or more entities are related (Customer placed Order). One row per unique combination of Hub keys, insert-only, no descriptive data.</p>
+          <p><strong>Satellite:</strong> stores descriptive attributes &mdash; the context that describes an entity or relationship (customer name, email, address). Many rows per hub/link key, each row capturing a point-in-time snapshot with load timestamp.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a business key and how is it different from a hash key?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Business key (BK):</strong> the natural identifier the business uses to refer to an entity in real-world processes &mdash; printed on invoices, typed by users, used in conversations. It&rsquo;s meaningful (CustomerID &lsquo;1234&rsquo; means something to the business) and relatively stable.</p>
+          <p><strong>Hash key (HK):</strong> a surrogate derived by hashing the normalized BK (<code>UPPER</code>/<code>TRIM</code> applied). It&rsquo;s deterministic (same BK always produces same HK), fixed-length (32 chars for MD5), and used as the primary key of Hubs and as foreign keys everywhere else.</p>
+          <p>The HK allows hash key computation in parallel across multiple servers without coordination, enabling the vault&rsquo;s parallel loading architecture.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is HashDiff and why do satellites need it?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>HashDiff is a hash (MD5 or SHA-256) computed over all the payload (descriptive) columns in a satellite row. When loading a satellite, you compare the incoming HashDiff to the current satellite row&rsquo;s HashDiff.</p>
+          <p>If they <strong>match</strong>, the data hasn&rsquo;t changed &mdash; skip the insert. If they <strong>differ</strong>, something changed &mdash; insert a new row.</p>
+          <p>Without HashDiff, you&rsquo;d need to compare every individual column between incoming and existing data, which is complex and slow for satellites with many columns. With HashDiff, change detection is always a single value comparison regardless of column count.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Why is Data Vault insert-only? What happens when source data is deleted?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Insert-only is fundamental to <strong>auditability</strong> and <strong>parallel loading</strong>. Auditability: if you update or delete rows, you lose the history of what was true before. Insert-only means every change is permanently recorded with its timestamp. Parallel loading: INSERT operations don&rsquo;t cause row-level locks the way UPDATE/MERGE does; multiple sessions can INSERT to the same table simultaneously.</p>
+          <p>When source data is deleted:</p>
+          <p><strong>Option 1:</strong> Insert a new satellite row with a deletion flag (<code>IS_DELETED='Y'</code> in a Status Satellite) and a new LOAD_DATE.</p>
+          <p><strong>Option 2:</strong> Use an Effectivity Satellite on a Link with <code>IS_ACTIVE='N'</code> when the relationship ends.</p>
+          <p><strong>Option 3:</strong> Simply stop loading that entity&rsquo;s satellite rows &mdash; future PIT table queries will show the entity as having no current record after a certain date.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the difference between Load Date and an event timestamp?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>LOAD_DATE (or LDTS)</strong> is the warehouse arrival time &mdash; when the data landed in our staging/vault system. It&rsquo;s set once in staging (usually <code>CURRENT_TIMESTAMP</code> at batch start) and never changed.</p>
+          <p>An <strong>event timestamp</strong> (business date, effective date, transaction date) is when the business event actually occurred in the real world. They can differ significantly: a payment might have occurred on Jan 1 (event date) but the source extract ran on Jan 5 (LOAD_DATE).</p>
+          <p>LOAD_DATE goes in the vault&rsquo;s mandatory metadata columns. Event timestamps go in satellite payload columns as regular data.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Satellite splitting strategy and why does it matter?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Splitting satellites means dividing one entity&rsquo;s attributes across multiple satellite tables rather than one giant table. Split by:</p>
+          <p><strong>Source:</strong> CRM attributes in <code>SAT_CUSTOMER_FROM_CRM</code>, ERP attributes in <code>SAT_CUSTOMER_FROM_ERP</code>.</p>
+          <p><strong>Rate-of-change:</strong> daily stock prices separate from rarely-changing product descriptions.</p>
+          <p><strong>Classification:</strong> demographic data separate from financial data.</p>
+          <p><strong>Why it matters:</strong> if all attributes are in one satellite, every change to ANY attribute creates a new row copying ALL attributes &mdash; massive duplication. With split satellites, a CRM address change only creates a new row in the CRM satellite; ERP data is unaffected.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Can you sketch a simple Data Vault model for an e-commerce order scenario?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Entities and relationships:</strong> Customer places Order; Order contains Product; Product belongs to Category.</p>
+          <p><strong>Hub tables:</strong> <code>HUB_CUSTOMER</code> (CUSTOMER_BK), <code>HUB_ORDER</code> (ORDER_BK), <code>HUB_PRODUCT</code> (PRODUCT_SKU), <code>HUB_CATEGORY</code> (CATEGORY_CODE).</p>
+          <p><strong>Link tables:</strong> <code>LINK_CUSTOMER_ORDER</code> (HUB_CUSTOMER_HK + HUB_ORDER_HK), <code>LINK_ORDER_PRODUCT</code> (HUB_ORDER_HK + HUB_PRODUCT_HK + quantity as DD), <code>LINK_PRODUCT_CATEGORY</code> (HUB_PRODUCT_HK + HUB_CATEGORY_HK).</p>
+          <p><strong>Satellite tables:</strong> <code>SAT_CUSTOMER_DEMOGRAPHICS</code> (name, email, DOB), <code>SAT_CUSTOMER_ADDRESS</code> (address columns &mdash; separate because change rate differs), <code>SAT_ORDER_DETAILS</code> (status, total_amount, order_date), <code>SAT_PRODUCT_DESCRIPTION</code> (name, description), <code>SAT_PRODUCT_PRICING</code> (price &mdash; changes frequently, separate satellite), <code>SAT_CATEGORY_DETAILS</code> (category name, hierarchy).</p>
+          <p><strong>Business Vault:</strong> <code>PIT_CUSTOMER</code> (pre-joins customer satellite timelines), <code>BRIDGE_CUSTOMER_ORDER_PRODUCT</code> (pre-flattens the traversal chain).</p>
+        </div>
+      </div>
+
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: SENIOR / ARCHITECT QUESTIONS
+       ============================================================ -->
+  <article class="concept" data-topic="senior-questions" id="senior-questions">
+    <p class="concept-num">Concept 02</p>
+    <h2>Senior / Architect Interview Questions</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Senior and architect-level questions go beyond definitions. Interviewers want to see that you can <strong>design under constraints</strong>, handle edge cases, compare platforms, and understand the full architectural lifecycle. These questions often have no single correct answer &mdash; your reasoning and trade-off awareness matter as much as the solution itself.
+      </p>
+    </div>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Design a Data Vault for a multi-country bank that needs consolidated risk reporting under BCBS 239.
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>(1)</strong> <code>HUB_LEGAL_ENTITY</code> uses GLEIF LEI (Legal Entity Identifier) as BK &mdash; globally standardized, available for all regulated entities, doesn&rsquo;t change.</p>
+          <p><strong>(2)</strong> <code>SAL_LEGAL_ENTITY</code> handles the mapping from internal party codes to LEI.</p>
+          <p><strong>(3)</strong> <code>HUB_TRADE</code> with TradeID BK; <code>HUB_INSTRUMENT</code> with ISIN or CUSIP as BK.</p>
+          <p><strong>(4)</strong> <code>LINK_TRADE_RISK_EXPOSURE</code>: three-way link (Trade, Instrument, Legal Entity) capturing the exposure relationship.</p>
+          <p><strong>(5)</strong> Effectivity Satellites on all trade-related links for position open/close tracking.</p>
+          <p><strong>(6)</strong> SHA-256 (not MD5) for hash keys &mdash; regulatory environment requires stronger collision resistance.</p>
+          <p><strong>(7)</strong> Record Source includes DATA_QUALITY_TIER: <code>'AUTHORITATIVE'</code>, <code>'INDICATIVE'</code>, <code>'ESTIMATED'</code>.</p>
+          <p><strong>(8)</strong> Regulatory Mart: Point-in-time capability so regulators can request &ldquo;what was our exposure on date X&rdquo; retroactively.</p>
+          <p><strong>(9)</strong> Access logging satellite: every query against the Regulatory Mart writes to an access log for BCBS 239 audit trail.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How would you handle late-arriving data in a Data Vault? Give a concrete example.
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Late-arriving data means a source system sends data for a past date after that date has already been processed.</p>
+          <p><strong>Example:</strong> On Jan 10, a branch office sends transactions from Dec 31 that were delayed due to connectivity issues.</p>
+          <p><strong>(1)</strong> Insert the late record with <code>LOAD_DATE = Jan 10</code> (the actual warehouse arrival time &mdash; this is immutable).</p>
+          <p><strong>(2)</strong> The event date (Dec 31) is in the satellite payload column (<code>TRANSACTION_DATE</code>).</p>
+          <p><strong>(3)</strong> The Raw Vault now has the December data, correctly timestamped as &lsquo;arrived Jan 10&rsquo;.</p>
+          <p><strong>(4)</strong> Rebuild affected PIT tables and Information Marts to include the new records.</p>
+          <p><strong>(5)</strong> Regulatory reports for December may need to be re-issued &mdash; the vault makes this possible because the late data is now present.</p>
+          <p><strong>Key distinction:</strong> LOAD_DATE is always the actual warehouse arrival time, never backdated. The business event date goes in payload. This keeps the vault&rsquo;s audit trail accurate.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Compare Data Vault modeling approaches for Snowflake vs Databricks Delta Lake. What changes?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Both platforms support DV well, but with different optimizations.</p>
+          <p><strong>Snowflake:</strong> no traditional indexes &mdash; use <code>CLUSTER BY (HUB_HK)</code> and <code>CLUSTER BY (HUB_HK, TO_DATE(LOAD_DATE))</code> on Satellites; use Dynamic Tables for auto-refreshing Business Vault structures; leverage Zero-Copy Cloning for dev/test environments; MD5/SHA2 functions are built-in; MERGE is efficient and recommended.</p>
+          <p><strong>Databricks:</strong> use Delta Lake MERGE INTO for satellite CDC; <code>Z-ORDER BY (hub_hk, load_date)</code> replaces clustering; Delta time travel (<code>TIMESTAMP AS OF</code>) complements DV history but doesn&rsquo;t replace it; Python/PySpark often used for complex staging transforms; Unity Catalog provides governance integration.</p>
+          <p><strong>Common to both:</strong> hash key computation pattern (<code>MD5(UPPER(TRIM(BK)))</code>), insert-only Hub/Link loading with NOT EXISTS or MERGE-when-not-matched, satellite CDC via HashDiff, PIT and Bridge tables in Business Vault.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Walk me through how you would architect a streaming Data Vault pipeline for real-time fraud detection.
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Requirements:</strong> transactions processed within seconds, fraud signal available before transaction settles.</p>
+          <p><strong>(1) Source:</strong> payment processor emits transaction events to Kafka topic <code>'transactions'</code>.</p>
+          <p><strong>(2) Stream processor</strong> (Spark Structured Streaming or Flink): consume events, compute HKs and HashDiff in-stream, apply hard business rules (NULL BK filter, normalization), write to Delta Lake Raw Vault as micro-batches (every 10&ndash;30 seconds).</p>
+          <p><strong>(3) Raw Vault:</strong> <code>LINK_PAYMENT_TRANSACTION</code> (non-historized, with amount as DD), <code>HUB_CARD</code>, <code>HUB_MERCHANT</code>, <code>HUB_DEVICE</code>, <code>SAT_TRANSACTION_CONTEXT</code> (location, device fingerprint).</p>
+          <p><strong>(4) Business Vault trigger:</strong> after each micro-batch lands in Raw Vault, trigger a Business Vault compute for affected customer hub keys &mdash; update rolling aggregates (transactions_last_1h, transactions_last_24h, distinct_merchants_last_6h).</p>
+          <p><strong>(5) Fraud scoring model</strong> reads from Business Vault aggregates (near-real-time, seconds old) and produces risk_score.</p>
+          <p><strong>Result:</strong> fraud signal available within 5&ndash;10 seconds of transaction event. Information Mart for fraud analysts rebuilt every 5 minutes from Business Vault.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the CDVDM certification and what are the core knowledge areas it tests?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>CDVDM (Certified Data Vault Data Modeler) is the industry certification for Data Vault professionals, offered by the Data Vault Alliance and Dan Linstedt&rsquo;s organization.</p>
+          <p><strong>(1)</strong> Data Vault 2.0 methodology and all 9 modeling principles.</p>
+          <p><strong>(2)</strong> Hub, Link, Satellite design rules and when to use each variant (Multi-Active Sat, Effectivity Sat, Same-As Link, Non-Historized Link).</p>
+          <p><strong>(3)</strong> Raw Vault and Business Vault architecture, separation of concerns.</p>
+          <p><strong>(4)</strong> Loading patterns: staging, HashKey, HashDiff, parallel loading.</p>
+          <p><strong>(5)</strong> Performance optimization: PIT tables, Bridge tables, indexing.</p>
+          <p><strong>(6)</strong> Information Mart design: converting vault to star schema, SCD types.</p>
+          <p><strong>(7)</strong> NoSQL and cloud DV patterns.</p>
+          <p><strong>(8)</strong> Methodology: SEI/CMMI-compliant agile sprint integration with DV2.</p>
+          <p>Exam format: multiple choice + scenario-based questions. Recommended prep: complete all DV2 Mastery modules, read <em>Building a Scalable Data Warehouse with Data Vault 2.0</em> by Linstedt &amp; Olschimke, practice SQL for all common patterns.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What&rsquo;s the most common mistake you see in real Data Vault implementations?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Three consistent patterns:</strong></p>
+          <p><strong>(1) Soft rules in the Raw Vault &mdash;</strong> teams under time pressure put code lookups, derivations, or business logic in staging or the Raw Vault. This destroys the audit trail and makes rule changes expensive. Solution: strict architecture review checkpoints before any new staging transform is approved.</p>
+          <p><strong>(2) Giant satellites &mdash;</strong> one satellite with 80+ columns for an entity. Every change to any column creates a new row with all 80 columns, causing massive storage bloat and slow change detection. Solution: satellite splitting by source, rate-of-change, and classification &mdash; enforced at design review.</p>
+          <p><strong>(3) Skipping the Business Vault &mdash;</strong> teams build Raw Vault and then try to query it directly from BI tools. Performance is terrible and queries are impossibly complex. Solution: mandate PIT tables for every entity with more than 2 satellites before any reporting mart is built.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: LIVE SQL CODING CHALLENGES
+       ============================================================ -->
+  <article class="concept" data-topic="sql-challenges" id="sql-challenges">
+    <p class="concept-num">Concept 03</p>
+    <h2>Live SQL Coding Challenges</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Many DV interviews include a live SQL coding challenge. These typically test: <strong>HashKey computation</strong>, <strong>satellite CDC loading</strong>, and <strong>point-in-time queries</strong>. Practice these until you can write them cold.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Challenge 1 &mdash; Hub Load</h3>
+      <p>Write the Hub load for <code>HUB_PRODUCT</code> from staging table <code>STG_PRODUCT</code>. Staging has: PRODUCT_SKU, PRODUCT_NAME, PRICE, CATEGORY, LOAD_DATE, RECORD_SOURCE.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Challenge 1: Hub Load for HUB_PRODUCT</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- HUB_PRODUCT target: HUB_PRODUCT_HK, PRODUCT_BK, LOAD_DATE, RECORD_SOURCE</span>
+
+<span class="kw">INSERT INTO</span> <span class="hub">HUB_PRODUCT</span> (<span class="hub">HUB_PRODUCT_HK</span>, PRODUCT_BK, LOAD_DATE, RECORD_SOURCE)
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(PRODUCT_SKU)))  <span class="kw">AS</span> <span class="hub">HUB_PRODUCT_HK</span>,
+    <span class="fn">UPPER</span>(<span class="fn">TRIM</span>(PRODUCT_SKU))       <span class="kw">AS</span> PRODUCT_BK,
+    LOAD_DATE,
+    RECORD_SOURCE
+<span class="kw">FROM</span> STG_PRODUCT stg
+<span class="kw">WHERE</span> PRODUCT_SKU <span class="kw">IS NOT NULL</span>           <span class="cm">-- hard rule: never load null BK</span>
+  <span class="kw">AND NOT EXISTS</span> (
+      <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">HUB_PRODUCT</span> h
+      <span class="kw">WHERE</span> h.<span class="hub">HUB_PRODUCT_HK</span> = <span class="fn">MD5</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.PRODUCT_SKU)))
+  );
+
+<span class="cm">-- Common mistakes to avoid:</span>
+<span class="cm">-- 1. Forgetting NOT EXISTS &rarr; duplicates on re-run</span>
+<span class="cm">-- 2. Forgetting IS NOT NULL filter on BK</span>
+<span class="cm">-- 3. Not normalizing BK before hashing (UPPER/TRIM must match everywhere)</span></pre>
+    </div>
+
+    <div class="detail">
+      <h3>Challenge 2 &mdash; Satellite CDC Load</h3>
+      <p>Write the Satellite CDC load for <code>SAT_PRODUCT_PRICING</code>. The staging table has pre-computed <code>HUB_PRODUCT_HK</code> and <code>HASH_DIFF_PRICING</code>.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Challenge 2: Satellite CDC Load for SAT_PRODUCT_PRICING</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAT_PRODUCT_PRICING: HUB_PRODUCT_HK, LOAD_DATE, LOAD_END_DATE,</span>
+<span class="cm">--                      HASH_DIFF, RECORD_SOURCE, LIST_PRICE, SALE_PRICE, CURRENCY_CODE</span>
+
+<span class="kw">INSERT INTO</span> <span class="sat">SAT_PRODUCT_PRICING</span> (
+    <span class="hub">HUB_PRODUCT_HK</span>, LOAD_DATE, LOAD_END_DATE,
+    HASH_DIFF, RECORD_SOURCE,
+    LIST_PRICE, SALE_PRICE, CURRENCY_CODE
+)
+<span class="kw">SELECT</span>
+    stg.<span class="hub">HUB_PRODUCT_HK</span>,
+    stg.LOAD_DATE,
+    <span class="kw">NULL</span>                   <span class="kw">AS</span> LOAD_END_DATE,
+    stg.HASH_DIFF_PRICING  <span class="kw">AS</span> HASH_DIFF,
+    stg.RECORD_SOURCE,
+    stg.LIST_PRICE, stg.SALE_PRICE, stg.CURRENCY_CODE
+<span class="kw">FROM</span> STG_PRODUCT stg
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_PRODUCT_PRICING</span> sat
+    <span class="kw">ON</span>  sat.<span class="hub">HUB_PRODUCT_HK</span> = stg.<span class="hub">HUB_PRODUCT_HK</span>
+    <span class="kw">AND</span> sat.LOAD_END_DATE <span class="kw">IS NULL</span>           <span class="cm">-- join to CURRENT row only</span>
+<span class="kw">WHERE</span> sat.<span class="hub">HUB_PRODUCT_HK</span> <span class="kw">IS NULL</span>          <span class="cm">-- new product: no satellite row yet</span>
+   <span class="kw">OR</span> sat.HASH_DIFF <span class="op">!=</span> stg.HASH_DIFF_PRICING; <span class="cm">-- existing product: price changed</span>
+
+<span class="cm">-- Common mistakes:</span>
+<span class="cm">-- 1. Joining to ALL satellite rows (should join only to current: LOAD_END_DATE IS NULL)</span>
+<span class="cm">-- 2. Wrong null check: use IS NULL not = NULL</span>
+<span class="cm">-- 3. Forgetting the new-product case (sat.HK IS NULL after LEFT JOIN)</span></pre>
+    </div>
+
+    <div class="detail">
+      <h3>Challenge 3 &mdash; Point-in-Time Query</h3>
+      <p>Write a point-in-time query to get a product&rsquo;s price as of <code>'2023-06-01'</code>. &ldquo;What was the list price of product SKU-12345 on June 1, 2023?&rdquo;</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Challenge 3: Point-in-Time Query (without PIT table)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- "What was the list price of product SKU-12345 on June 1, 2023?"</span>
+<span class="kw">SELECT</span>
+    h.PRODUCT_BK,
+    p.LIST_PRICE,
+    p.SALE_PRICE,
+    p.LOAD_DATE     <span class="kw">AS</span> effective_from,
+    p.LOAD_END_DATE <span class="kw">AS</span> effective_to
+<span class="kw">FROM</span> <span class="hub">HUB_PRODUCT</span> h
+<span class="kw">JOIN</span> <span class="sat">SAT_PRODUCT_PRICING</span> p
+    <span class="kw">ON</span> p.<span class="hub">HUB_PRODUCT_HK</span> = h.<span class="hub">HUB_PRODUCT_HK</span>
+<span class="kw">WHERE</span> h.PRODUCT_BK = <span class="str">'SKU-12345'</span>
+  <span class="kw">AND</span> p.LOAD_DATE = (
+      <span class="cm">-- Find the most recent load date that is on or before the target date</span>
+      <span class="kw">SELECT MAX</span>(p2.LOAD_DATE)
+      <span class="kw">FROM</span> <span class="sat">SAT_PRODUCT_PRICING</span> p2
+      <span class="kw">WHERE</span> p2.<span class="hub">HUB_PRODUCT_HK</span> = h.<span class="hub">HUB_PRODUCT_HK</span>
+        <span class="kw">AND</span> p2.LOAD_DATE <span class="op">&lt;=</span> <span class="str">'2023-06-01 23:59:59'</span>
+  );
+
+<span class="cm">-- Common mistakes:</span>
+<span class="cm">-- 1. Using &gt; instead of &lt;= in the subquery (wrong direction)</span>
+<span class="cm">-- 2. Using LOAD_END_DATE IS NULL (gives CURRENT record, not as-of)</span>
+<span class="cm">-- 3. Not handling the case where no record existed before the target date</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Interview tip:</strong> When given a SQL challenge live, narrate what you&rsquo;re doing. Say &ldquo;I&rsquo;m filtering NULLs here because a Hub must never store a null business key&rdquo; or &ldquo;I&rsquo;m joining only to current satellite rows by filtering LOAD_END_DATE IS NULL.&rdquo; Interviewers want to see that you understand the <em>why</em>, not just the syntax.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: SYSTEM DESIGN — DV AT SCALE
+       ============================================================ -->
+  <article class="concept" data-topic="system-design" id="system-design">
+    <p class="concept-num">Concept 04</p>
+    <h2>System Design &mdash; DV at Scale</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        System design interviews ask you to architect a complete Data Vault solution from scratch. The interviewer gives you a scenario (&ldquo;design a data warehouse for a global bank&rdquo;) and you&rsquo;re expected to walk through the full architecture: source systems, staging, Raw Vault, Business Vault, Information Mart, tooling, and operational considerations.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Six-Step Framework for DV System Design Questions</h3>
+
+      <h3>Step 1 &mdash; Clarify Scope (2&ndash;3 minutes)</h3>
+      <ul>
+        <li>How many source systems?</li>
+        <li>Data volume (GB/day, TB/day)?</li>
+        <li>Latency requirement (batch daily, near-real-time, streaming)?</li>
+        <li>Regulatory environment (BCBS 239, GDPR, HIPAA, SOX)?</li>
+        <li>Cloud platform or on-premises?</li>
+        <li>Team size and skill level?</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#9888;</span>
+      <p><strong>Never skip Step 1.</strong> Jumping straight to design without clarifying constraints is the most common system design interview mistake. Spend 2&ndash;3 minutes confirming assumptions &mdash; it demonstrates seniority and prevents designing the wrong system.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Step 2 &mdash; Define Entities and Hubs (3&ndash;5 minutes)</h3>
+      <ul>
+        <li>Identify the 5&ndash;10 most important business entities</li>
+        <li>Confirm their business keys with the interviewer</li>
+        <li>Sketch Hub names on a whiteboard or shared doc</li>
+      </ul>
+
+      <h3>Step 3 &mdash; Define Relationships (Links) (2&ndash;3 minutes)</h3>
+      <ul>
+        <li>What are the critical relationships between entities?</li>
+        <li>Are any relationships transactional (non-historized link pattern)?</li>
+        <li>Are there hierarchies (self-referencing same-as links)?</li>
+      </ul>
+
+      <h3>Step 4 &mdash; Define Satellite Strategy (2&ndash;3 minutes)</h3>
+      <ul>
+        <li>How many satellites per hub?</li>
+        <li>Split by source system? By rate-of-change?</li>
+        <li>Any multi-active or effectivity satellites needed?</li>
+      </ul>
+
+      <h3>Step 5 &mdash; Architecture Layers</h3>
+      <ul>
+        <li><strong>Staging:</strong> where does raw data land? (cloud storage, landing zone, Kafka)</li>
+        <li><strong>Raw Vault:</strong> cloud platform choice, compute sizing, clustering strategy</li>
+        <li><strong>Business Vault:</strong> PIT refresh frequency, which Bridge tables are needed?</li>
+        <li><strong>Information Mart:</strong> star schema or wide tables, primary consumers</li>
+      </ul>
+
+      <h3>Step 6 &mdash; Operational Concerns</h3>
+      <ul>
+        <li>Orchestration tool (Airflow, dbt Cloud, Azure Data Factory, Prefect)</li>
+        <li>Monitoring and alerting (change rate anomalies, load window SLA breaches)</li>
+        <li>Data quality (Error Mart, reconciliation row counts, source vs vault comparisons)</li>
+      </ul>
+    </div>
+
+    <div class="detail">
+      <h3>Worked Example: Global Airline with 50M Passengers/Year</h3>
+
+      <p><strong>Step 1 &mdash; Clarifications:</strong> 80 countries, 15 source systems (PMS, PSS, loyalty, ground handling, cargo, finance), 2 TB/day, batch + near-real-time for loyalty transactions, cloud (Azure), regulated (GDPR, IATA).</p>
+
+      <p><strong>Step 2 &mdash; Key Hubs:</strong> <code>HUB_PASSENGER</code> (Frequent Flyer Number), <code>HUB_FLIGHT</code> (Flight Number + Date as composite BK), <code>HUB_AIRCRAFT</code> (tail number), <code>HUB_ROUTE</code> (origin&ndash;destination pair), <code>HUB_AIRPORT</code> (IATA code), <code>HUB_BOOKING</code> (PNR code), <code>HUB_LOYALTY_ACCOUNT</code> (account number).</p>
+
+      <p><strong>Step 3 &mdash; Key Links:</strong> <code>LINK_PASSENGER_BOOKING</code>, <code>LINK_BOOKING_FLIGHT</code> (non-historized &mdash; high volume, transactional), <code>LINK_FLIGHT_AIRCRAFT</code> (with Effectivity Sat for aircraft swaps), <code>LINK_FLIGHT_ROUTE</code>, <code>LINK_PASSENGER_LOYALTY</code>.</p>
+
+      <p><strong>Step 4 &mdash; Satellites:</strong> <code>SAT_PASSENGER_IDENTITY</code> (name, DOB, passport &mdash; PII, encrypted at rest), <code>SAT_PASSENGER_CONTACT</code> (email, phone &mdash; separate satellite for GDPR right-to-erasure handling), <code>SAT_FLIGHT_STATUS</code> (departure status, delay reason &mdash; fast-changing), <code>SAT_BOOKING_DETAILS</code> (fare class, price, cabin), <code>SAT_LOYALTY_TIER</code> (Multi-Active Satellite &mdash; passenger can hold tiers in multiple programs simultaneously).</p>
+
+      <p><strong>Step 5 &mdash; Layers:</strong> Staging on Azure Data Lake Gen2. Raw Vault on Azure Synapse (serverless + dedicated pool). Business Vault: <code>PIT_PASSENGER</code> refreshed every 30 min, <code>BRIDGE_BOOKING_FLIGHT</code> for revenue reporting. Information Mart: Passenger 360 (wide flat table, rebuilt daily), Revenue Mart (star schema, Kimball-style), Loyalty Mart.</p>
+
+      <p><strong>Step 6 &mdash; Operations:</strong> Azure Data Factory + dbt Cloud for orchestration. Alerting on flight status satellite row count anomalies (cancellation spikes). GDPR: <code>SAT_PASSENGER_CONTACT</code> has an <code>IS_ERASED</code> flag; erasure request triggers a new satellite row with PII columns nullified &mdash; insert-only preserved.</p>
+    </div>
+
+    <div class="tip">
+      <p><strong>Scoring criteria in system design interviews:</strong> Clarity of thought &gt; completeness of design. An interviewer would rather see you methodically work through a 60% complete solution with clear reasoning than rush through a 100% complete answer you can&rsquo;t explain. Always say why you made each design choice.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: CDVDM CERTIFICATION PREP & FINAL REVIEW
+       ============================================================ -->
+  <article class="concept" data-topic="cdvdm-prep" id="cdvdm-prep">
+    <p class="concept-num">Concept 05</p>
+    <h2>CDVDM Certification Prep &amp; Final Review</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        The CDVDM exam tests everything covered in Modules 01&ndash;13. This final concept gives you a rapid-fire review of the key facts you must know cold, plus common exam traps that trip up even experienced practitioners.
+      </p>
+    </div>
+
+    <p class="interview-section-label">Hubs &mdash; Must Know</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Rule</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Only 4 columns</strong></td>
+          <td>HK, BK, LOAD_DATE, RECORD_SOURCE &mdash; nothing else ever</td>
+        </tr>
+        <tr>
+          <td><strong>No descriptive data</strong></td>
+          <td>Names, addresses, status codes all go in Satellites</td>
+        </tr>
+        <tr>
+          <td><strong>One row per unique BK</strong></td>
+          <td>Insert-only; never update or delete</td>
+        </tr>
+        <tr>
+          <td><strong>BK requirements</strong></td>
+          <td>Must be not-null, business-meaningful, and relatively stable</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="interview-section-label">Links &mdash; Must Know</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Rule</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>FK references Hub HKs only</strong></td>
+          <td>Never reference business keys directly from a Link column</td>
+        </tr>
+        <tr>
+          <td><strong>Link HK derivation</strong></td>
+          <td>Hash of ALL participating BKs concatenated (order matters &mdash; document it)</td>
+        </tr>
+        <tr>
+          <td><strong>No descriptive data</strong></td>
+          <td>Exception: Degenerate Dimensions (DDs) allowed in transaction links</td>
+        </tr>
+        <tr>
+          <td><strong>One row per unique combination</strong></td>
+          <td>One row per unique set of participant HKs; insert-only</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="interview-section-label">Satellites &mdash; Must Know</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Rule</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Composite PK</strong></td>
+          <td>(parent HK, LOAD_DATE) &mdash; never the HK alone</td>
+        </tr>
+        <tr>
+          <td><strong>HashDiff coverage</strong></td>
+          <td>Covers ALL payload columns &mdash; missing any column breaks change detection</td>
+        </tr>
+        <tr>
+          <td><strong>Insert condition</strong></td>
+          <td>Insert when HashDiff changes OR no existing row exists for that HK</td>
+        </tr>
+        <tr>
+          <td><strong>Splitting strategy</strong></td>
+          <td>Split by source system, rate-of-change, and classification</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="interview-section-label">Loading Patterns &mdash; Must Know</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Stage</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Staging</strong></td>
+          <td>Computes ALL hash keys and HashDiff values before any vault loads begin</td>
+        </tr>
+        <tr>
+          <td><strong>Hub / Link load</strong></td>
+          <td>INSERT WHERE NOT EXISTS (or MERGE WHEN NOT MATCHED only)</td>
+        </tr>
+        <tr>
+          <td><strong>Satellite load</strong></td>
+          <td>INSERT WHERE no current row OR HashDiff differs from current row</td>
+        </tr>
+        <tr>
+          <td><strong>Parallelism</strong></td>
+          <td>ALL vault loads can run in parallel &mdash; staging is the common synchronization point</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="interview-section-label">Business Vault &mdash; Must Know</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Object</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>PIT Table</strong></td>
+          <td>One row per entity per snapshot date; stores satellite LOAD_DATEs for fast joins without MAX() aggregation at query time</td>
+        </tr>
+        <tr>
+          <td><strong>Bridge Table</strong></td>
+          <td>Pre-flattens Hub-Link-Hub chains into wide lookup tables; eliminates multi-hop joins in Information Marts</td>
+        </tr>
+        <tr>
+          <td><strong>Computed Satellites</strong></td>
+          <td>Business Vault objects with <code>BSAT_</code> prefix; derived data, soft rules only, never raw source data</td>
+        </tr>
+        <tr>
+          <td><strong>No hard rules</strong></td>
+          <td>Business Vault applies soft rules only; hard structural rules belong in staging</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="interview-section-label">Common Exam Traps</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          &ldquo;Does a Hub contain descriptive attributes?&rdquo; &mdash; Trap question
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Answer: NO.</strong> This is the most common trick question. Hubs contain exactly 4 columns: Hash Key, Business Key, Load Date, Record Source. Descriptive attributes (names, addresses, status codes) go in Satellites. Putting descriptive data in a Hub is the #1 beginner DV design mistake and a guaranteed exam failure.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          &ldquo;Can a Satellite be the primary store for a business key?&rdquo; &mdash; Trap question
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Answer: NO.</strong> Business keys belong exclusively in Hubs. A Satellite references the Hub through its parent Hash Key (foreign key). Satellites are for descriptive, time-variant data &mdash; not for entity identity. If you put a business key in a Satellite, you have no stable identity anchor for history tracking.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          &ldquo;Is LOAD_DATE the business event date?&rdquo; &mdash; Trap question
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Answer: NO.</strong> LOAD_DATE is the warehouse arrival time &mdash; when the data landed in the vault. The business event date (when something actually happened in the real world) goes in the satellite payload as a regular data column (e.g., <code>TRANSACTION_DATE</code>, <code>EVENT_TIMESTAMP</code>). Never confuse these two. LOAD_DATE is metadata; event date is business data.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          &ldquo;Is MERGE acceptable for vault loading?&rdquo; &mdash; Nuanced question
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Answer: Yes, with strict conditions.</strong> For Hubs and Links: MERGE with WHEN NOT MATCHED only (no WHEN MATCHED update) is acceptable and equivalent to INSERT WHERE NOT EXISTS. For Satellites: MERGE is acceptable but must be limited to WHEN NOT MATCHED for new rows. <strong>Never</strong> use WHEN MATCHED UPDATE on Raw Vault satellites &mdash; that would violate the insert-only principle and destroy the audit trail.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          &ldquo;Can you UPDATE a Raw Vault satellite?&rdquo; &mdash; Trap question
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Answer: NO &mdash; with one narrow exception.</strong> Raw Vault satellites are insert-only. The one permitted exception is populating <code>LOAD_END_DATE</code> when a new version of the record arrives (to support range-based queries). Many teams avoid even this by using PIT tables instead, which compute effective date ranges at query time without ever updating satellite rows. If asked on the exam, the default answer is &ldquo;no updates&rdquo; unless the question specifically references LOAD_END_DATE maintenance.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COMPLETION CELEBRATION -->
+    <div class="summary" style="border-color:var(--purple-border);background:linear-gradient(145deg,rgba(167,139,250,0.08),rgba(232,184,75,0.05),rgba(167,139,250,0.04))">
+      <h3 style="color:var(--purple);font-size:1.15rem">&#127941; You&rsquo;ve Completed the DV2 Mastery Program</h3>
+      <p style="color:var(--ink-2);font-size:0.95rem;line-height:1.85;margin-bottom:1.75rem">All 14 modules. 200+ concepts. 100+ SQL examples. You now have the knowledge to design, build, and optimize enterprise Data Vault 2.0 implementations at any scale. Good luck in your interviews and certifications.</p>
+      <ul>
+        <li>Foundation (M01&ndash;02) &mdash; DV2 introduction, core modeling concepts, history, and vocabulary</li>
+        <li>Modeling Deep Dives (M03&ndash;05) &mdash; Hubs, Links, and Satellites in full architectural detail</li>
+        <li>Architecture (M06&ndash;07) &mdash; Raw Vault and Business Vault patterns, PIT and Bridge tables</li>
+        <li>Performance &amp; Advanced (M08&ndash;09) &mdash; Indexing, optimization, edge cases, ensemble modeling</li>
+        <li>Automation &amp; Cloud (M10&ndash;11) &mdash; dbt, metadata-driven loading, Snowflake, Databricks, streaming</li>
+        <li>Delivery (M12&ndash;13) &mdash; Dimensional Information Marts, real-world case studies across industries</li>
+        <li>Interview Mastery (M14) &mdash; This module &mdash; Q&amp;A by seniority, live SQL, system design, CDVDM prep</li>
+      </ul>
+    </div>
+
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module13.html">&larr; Module 13: Cases</a>
+  <a href="../index.html" class="next">Back to All Modules &rarr;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 14 of 14 &mdash; Interview Mastery
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('14', 5);</script>
+</body>
+</html>

@@ -1,0 +1,689 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Master Data Vault 2.0 performance optimization: indexing strategies, PIT table tuning, partitioning patterns, materialized views, and parallel load architecture for enterprise-scale vaults.">
+<title>Module 08: Performance Optimization | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html" class="active">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">08</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--coral);border-color:rgba(248,113,113,0.25);background:var(--coral-dim)">
+      Advanced &nbsp;&middot;&nbsp; Module 08 of 14
+    </span>
+    <h1>Performance<br><em style="color:var(--gold)">Optimization</em></h1>
+    <p class="mod-hero-desc">
+      A beautifully designed Data Vault that can&rsquo;t answer queries fast enough is useless in production. Learn the indexing, partitioning, PIT, and parallel load strategies that make enterprise vaults fly.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~50 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Advanced</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;07</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: INDEXING STRATEGY
+       ============================================================ -->
+  <article class="concept" data-topic="indexing" id="indexing">
+    <p class="concept-num">Concept 01</p>
+    <h2>Indexing Strategy for Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>Data Vault tables have <strong>predictable access patterns</strong>. You always look up by hash key. You always filter by load date. You often scan for NULL load_end_dates. If you design indexes around these patterns &mdash; not randomly &mdash; your queries will be fast even on <em>billions of rows</em>.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Hub Table Indexes</h3>
+      <p>Hubs are the simplest case. Every Hub has exactly two index needs:</p>
+      <ul>
+        <li><strong>Primary key index on HUB_{ENTITY}_HK</strong> &mdash; created automatically by the PK constraint. Supports all join operations from Links and Satellites back to the Hub.</li>
+        <li><strong>Index on {ENTITY}_BK</strong> &mdash; the business key lookup. When a staging row arrives with a raw business key rather than a pre-hashed HK, this index supports the &ldquo;does this BK already exist?&rdquo; check without a full Hub scan.</li>
+      </ul>
+
+      <h3>Link Table Indexes</h3>
+      <p>Links participate in multi-directional traversal queries. You need:</p>
+      <ul>
+        <li><strong>PK index on LINK_{NAME}_HK</strong> &mdash; the link&rsquo;s own surrogate key, created automatically.</li>
+        <li><strong>Individual index on each Hub FK</strong> (HUB_A_HK, HUB_B_HK) &mdash; when a query starts from one Hub and needs to find all linked entities, the FK index enables an efficient nested-loop join without scanning the entire Link table.</li>
+        <li><strong>Composite index on (HUB_A_HK, HUB_B_HK)</strong> &mdash; for bi-directional traversal queries that filter on both keys simultaneously.</li>
+      </ul>
+
+      <h3>Satellite Table Indexes</h3>
+      <p>Satellites carry the most data and the most query traffic. Three index types are essential:</p>
+      <ul>
+        <li><strong>Composite PK on (HUB_{ENTITY}_HK, LOAD_DATE)</strong> &mdash; the standard satellite primary key. Enables point-in-time lookups by entity and exact timestamp.</li>
+        <li><strong>Filtered/partial index on (HUB_{ENTITY}_HK) WHERE LOAD_END_DATE IS NULL</strong> &mdash; the single most impactful index in any vault. Current-record queries are the dominant workload, and a filtered index covering only IS NULL rows is dramatically smaller than a full index and serves this exact pattern exclusively.</li>
+        <li><strong>Index on HASH_DIFF</strong> &mdash; supports the satellite loader&rsquo;s change-detection query, which compares incoming HashDiff values against the current satellite HashDiff to determine whether an insert is needed.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Index DDL for Hub, Link &amp; Satellite</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ── HUB INDEXES ─────────────────────────────────────────────</span>
+<span class="kw">CREATE UNIQUE INDEX</span> idx_hub_customer_pk <span class="kw">ON</span> <span class="hub">HUB_CUSTOMER</span> (<span class="hub">HUB_CUSTOMER_HK</span>);
+<span class="kw">CREATE INDEX</span>        idx_hub_customer_bk <span class="kw">ON</span> <span class="hub">HUB_CUSTOMER</span> (<span class="str">CUSTOMER_BK</span>);
+
+<span class="cm">-- ── LINK INDEXES ─────────────────────────────────────────────</span>
+<span class="kw">CREATE UNIQUE INDEX</span> idx_link_co_pk        <span class="kw">ON</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (<span class="lnk">LINK_CUSTOMER_ORDER_HK</span>);
+<span class="kw">CREATE INDEX</span>        idx_link_co_customer   <span class="kw">ON</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (<span class="hub">HUB_CUSTOMER_HK</span>);
+<span class="kw">CREATE INDEX</span>        idx_link_co_order      <span class="kw">ON</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (<span class="hub">HUB_ORDER_HK</span>);
+<span class="kw">CREATE INDEX</span>        idx_link_co_composite  <span class="kw">ON</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="hub">HUB_ORDER_HK</span>);
+
+<span class="cm">-- ── SATELLITE INDEXES ────────────────────────────────────────</span>
+<span class="cm">-- Filtered index: covers the dominant "current record" query pattern</span>
+<span class="kw">CREATE INDEX</span> idx_sat_cd_current <span class="kw">ON</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (<span class="hub">HUB_CUSTOMER_HK</span>)
+    <span class="kw">WHERE</span> <span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>;    <span class="cm">-- partial index: current records only</span>
+
+<span class="cm">-- HashDiff index: change detection during satellite loader</span>
+<span class="kw">CREATE INDEX</span> idx_sat_cd_hdiff   <span class="kw">ON</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">HASH_DIFF</span>);
+
+<span class="cm">-- ── CLOUD PLATFORMS (Snowflake / BigQuery) ───────────────────</span>
+<span class="cm">-- Traditional B-tree indexes replaced by clustering keys</span>
+<span class="kw">ALTER TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="kw">CLUSTER BY</span> (<span class="hub">HUB_CUSTOMER_HK</span>);   <span class="cm">-- co-locate all rows for the same entity</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#9729;</span>
+      <p><strong>Cloud platforms (Snowflake, BigQuery, Redshift):</strong> Traditional row-level B-tree indexes don&rsquo;t exist. Instead use <strong>clustering keys</strong> on Snowflake or <strong>partition &amp; cluster columns</strong> on BigQuery. The effect is equivalent &mdash; data for the same hash key is physically co-located in the same micro-partition, enabling micro-partition pruning that cuts I/O dramatically. On Snowflake, automatic clustering maintenance runs in the background and requires no manual index rebuilds.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: PIT PERFORMANCE DEEP DIVE
+       ============================================================ -->
+  <article class="concept" data-topic="pit-performance" id="pit-performance">
+    <p class="concept-num">Concept 02</p>
+    <h2>PIT Table Performance Deep Dive</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>We covered what PIT tables <strong>do</strong> in Module 07. Now let&rsquo;s talk about <strong>how to make them fast</strong> to build and query. The two tricks are: <em>incremental refresh</em> (only rebuild rows that changed) and partitioning the PIT table by snapshot date.</p>
+    </div>
+
+    <div class="detail">
+      <h3>The Full-Rebuild Problem</h3>
+      <p>A naive PIT implementation rebuilds the entire table every load cycle. If you have 10 million customers and 730 daily snapshot dates (two years of history), that&rsquo;s 7.3 billion rows to recompute every single day &mdash; even though only a small fraction of customers receive new satellite data in any given load window.</p>
+      <p>The solution is <strong>incremental PIT refresh</strong>: only insert PIT rows for entities that have new satellite data since the last PIT run, and only for snapshot dates not yet covered.</p>
+
+      <h3>Two Guards for the Incremental Pattern</h3>
+      <ol>
+        <li><strong>EXISTS guard</strong> &mdash; only process Hub entities where at least one satellite has a LOAD_DATE newer than the entity&rsquo;s most recent PIT row.</li>
+        <li><strong>NOT EXISTS guard</strong> &mdash; skip insertion if a PIT row for this (HK, SNAPSHOT_DATE) pair already exists (idempotent re-run protection).</li>
+      </ol>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Incremental PIT Refresh (Today&rsquo;s Snapshot Only)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Instead of rebuilding the entire PIT table daily,
+-- only insert rows for dates that changed since last run</span>
+<span class="kw">INSERT INTO</span> <span class="hub">PIT_CUSTOMER</span>
+<span class="kw">SELECT</span>
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+    d.SNAPSHOT_DATE,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>) <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.SNAPSHOT_DATE
+    ) <span class="kw">AS</span> SAT_CUSTOMER_DEMOGRAPHICS_LDT,
+    (<span class="kw">SELECT</span> <span class="fn">MAX</span>(s.<span class="str">LOAD_DATE</span>) <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> s
+     <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+       <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> d.SNAPSHOT_DATE
+    ) <span class="kw">AS</span> SAT_CUSTOMER_CONTACT_LDT
+    <span class="cm">-- ... repeat correlated subquery for each satellite in PIT scope</span>
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">CROSS JOIN</span> (<span class="kw">SELECT</span> <span class="fn">CURRENT_DATE</span>() <span class="kw">AS</span> SNAPSHOT_DATE) d
+
+<span class="cm">-- Guard 1: only process entities with NEW satellite data since last PIT refresh</span>
+<span class="kw">WHERE EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s
+    <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&gt;=</span> (
+          <span class="kw">SELECT</span> <span class="fn">COALESCE</span>(<span class="fn">MAX</span>(<span class="str">LOAD_DATE</span>), <span class="str">'1900-01-01'</span>)
+          <span class="kw">FROM</span>   <span class="hub">PIT_CUSTOMER</span> p
+          <span class="kw">WHERE</span>  p.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+      )
+)
+
+<span class="cm">-- Guard 2: skip if this (HK, SNAPSHOT_DATE) row already exists</span>
+<span class="kw">AND NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="hub">PIT_CUSTOMER</span> p
+    <span class="kw">WHERE</span> p.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span>  p.SNAPSHOT_DATE   = d.SNAPSHOT_DATE
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Modern Alternative: LATERAL JOIN</h3>
+      <p>Modern SQL engines (Snowflake, DuckDB, PostgreSQL 9.3+) support <strong>LATERAL joins</strong>, which act like a correlated subquery executed once per row of the left table. For PIT-style queries they eliminate the need for a pre-built PIT table entirely &mdash; computing the as-of lookup inline.</p>
+      <p>Use LATERAL joins when the snapshot date is ad-hoc or when you&rsquo;re building a one-off historical slice that doesn&rsquo;t justify materializing a full PIT table.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LATERAL JOIN as PIT Alternative (Snowflake / DuckDB / PostgreSQL)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Modern SQL: LATERAL JOIN for ad-hoc point-in-time satellite lookups
+-- No pre-built PIT table required</span>
+<span class="kw">SELECT</span>
+    h.<span class="str">CUSTOMER_BK</span>,
+    d_snap.FIRST_NAME,
+    d_snap.LAST_NAME,
+    c_snap.EMAIL
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">CROSS JOIN</span> (<span class="kw">SELECT</span> <span class="kw">DATE</span> <span class="str">'2023-01-01'</span> <span class="kw">AS</span> snap_date) p
+
+<span class="cm">-- LATERAL: for each Hub row, find the as-of demographics row</span>
+<span class="kw">JOIN LATERAL</span> (
+    <span class="kw">SELECT</span> FIRST_NAME, LAST_NAME
+    <span class="kw">FROM</span>  <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s
+    <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> p.snap_date
+    <span class="kw">ORDER BY</span> s.<span class="str">LOAD_DATE</span> <span class="kw">DESC</span> <span class="kw">LIMIT</span> <span class="num">1</span>
+) d_snap <span class="kw">ON TRUE</span>
+
+<span class="cm">-- LATERAL: for each Hub row, find the as-of contact row</span>
+<span class="kw">JOIN LATERAL</span> (
+    <span class="kw">SELECT</span> EMAIL
+    <span class="kw">FROM</span>  <span class="sat">SAT_CUSTOMER_CONTACT</span> s
+    <span class="kw">WHERE</span> s.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> s.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> p.snap_date
+    <span class="kw">ORDER BY</span> s.<span class="str">LOAD_DATE</span> <span class="kw">DESC</span> <span class="kw">LIMIT</span> <span class="num">1</span>
+) c_snap <span class="kw">ON TRUE</span>
+
+<span class="kw">ORDER BY</span> h.<span class="str">CUSTOMER_BK</span>;</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Decision guide:</strong> If you query the same snapshot dates repeatedly across millions of entities &mdash; build a PIT table with incremental refresh. If the snapshot date is ad-hoc and you only need a slice of entities &mdash; LATERAL join is simpler and avoids PIT maintenance overhead. On Snowflake, evaluate <strong>Dynamic Tables</strong> as a managed auto-refreshing alternative to manually scheduled PIT rebuilds.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: PARTITIONING STRATEGIES
+       ============================================================ -->
+  <article class="concept" data-topic="partitioning" id="partitioning">
+    <p class="concept-num">Concept 03</p>
+    <h2>Partitioning Strategies</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>Partitioning splits a large table into <strong>smaller physical chunks</strong>. When a query only needs data from one partition, the database skips all the others &mdash; dramatically reducing I/O. For Data Vault, the two most powerful partitioning choices are <em>LOAD_DATE</em> and <em>Hash Key range</em>.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Partitioning by LOAD_DATE</h3>
+      <p>LOAD_DATE partitioning is the most universally applicable strategy across all three vault table types:</p>
+      <ul>
+        <li><strong>Best for:</strong> time-bounded queries (&ldquo;give me all data loaded in Q1 2023&rdquo;) and audit queries that reference a known date range.</li>
+        <li><strong>Partition granularity:</strong> monthly is standard. For extremely high-volume tables (hundreds of millions of rows per day), switch to daily partitions.</li>
+        <li><strong>Pruning benefit:</strong> when the satellite change-detection query filters by today&rsquo;s LOAD_DATE during vault loading, it scans only today&rsquo;s partition &mdash; not five years of history.</li>
+        <li><strong>Works for:</strong> all vault table types &mdash; Hub, Link, and Satellite &mdash; since every table carries LOAD_DATE.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LOAD_DATE Partitioning (Snowflake &amp; PostgreSQL)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ── Snowflake: cluster by load date ─────────────────────────
+-- Automatic micro-partition pruning on the clustered column</span>
+<span class="kw">ALTER TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="kw">CLUSTER BY</span> (<span class="fn">TO_DATE</span>(<span class="str">LOAD_DATE</span>));
+
+<span class="cm">-- ── PostgreSQL: declarative range partitioning ───────────────</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP</span>         <span class="kw">NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    FIRST_NAME       <span class="typ">VARCHAR(100)</span>,
+    LAST_NAME        <span class="typ">VARCHAR(100)</span>,
+    EMAIL            <span class="typ">VARCHAR(200)</span>,
+    <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+) <span class="kw">PARTITION BY RANGE</span> (<span class="str">LOAD_DATE</span>);
+
+<span class="cm">-- Create quarterly child partitions</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS_2023_Q1</span>
+    <span class="kw">PARTITION OF</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="kw">FOR VALUES FROM</span> (<span class="str">'2023-01-01'</span>) <span class="kw">TO</span> (<span class="str">'2023-04-01'</span>);
+
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS_2023_Q2</span>
+    <span class="kw">PARTITION OF</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="kw">FOR VALUES FROM</span> (<span class="str">'2023-04-01'</span>) <span class="kw">TO</span> (<span class="str">'2023-07-01'</span>);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Partitioning by Hash Key Range</h3>
+      <p>Hash key range partitioning assigns satellite rows to partitions based on the numeric value of the hash key. This enables two valuable properties:</p>
+      <ul>
+        <li><strong>Parallel loading without lock contention:</strong> each parallel loader thread owns one partition exclusively. Thread 1 loads entities whose HK starts with hex 0&ndash;3; Thread 2 loads 4&ndash;7; and so on. No thread ever touches another&rsquo;s partition, eliminating row-level lock contention entirely.</li>
+        <li><strong>Partition pruning on Hub-to-Satellite joins:</strong> when HUB_CUSTOMER and SAT_CUSTOMER_DEMOGRAPHICS share the same HK range partition scheme, the optimizer can eliminate entire partition pairs from a join rather than joining all partitions.</li>
+      </ul>
+      <p>This strategy is most impactful on on-premises MPP platforms (Teradata, Oracle Exadata, SQL Server). On Snowflake the engine&rsquo;s built-in virtual warehouse parallelism handles load concurrency without explicit HK range partitioning.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Composite Clustering for Maximum Pruning (Snowflake)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Cluster on BOTH hash key AND load date for maximum pruning efficiency
+-- Satellite queries filter on HK (entity lookup) AND LOAD_DATE (time slice)</span>
+<span class="kw">ALTER TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    <span class="kw">CLUSTER BY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="fn">TO_DATE</span>(<span class="str">LOAD_DATE</span>));
+
+<span class="cm">-- Query 1: entity-scoped history — prunes on HUB_CUSTOMER_HK</span>
+<span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+<span class="kw">WHERE</span>  <span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> <span class="str">'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'</span>
+<span class="kw">ORDER BY</span> <span class="str">LOAD_DATE</span> <span class="kw">DESC</span>;
+
+<span class="cm">-- Query 2: time-bounded audit — prunes on LOAD_DATE
+-- scans only January 2023 micro-partitions, not all history</span>
+<span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+<span class="kw">WHERE</span>  <span class="str">LOAD_DATE</span> <span class="op">&gt;=</span> <span class="str">'2023-01-01'</span>
+  <span class="kw">AND</span>  <span class="str">LOAD_DATE</span>  <span class="op">&lt;</span>  <span class="str">'2023-02-01'</span>;</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Partition pruning is free performance.</strong> It requires no query changes &mdash; the database engine applies pruning automatically when it detects filter predicates that align with partition columns. The only cost is the initial design decision and DDL. Once in place, every query that filters on LOAD_DATE or HUB_{ENTITY}_HK gets faster automatically as the table grows.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: MATERIALIZED VIEWS & PARALLEL LOAD ARCHITECTURE
+       ============================================================ -->
+  <article class="concept" data-topic="parallel-arch" id="parallel-arch">
+    <p class="concept-num">Concept 04</p>
+    <h2>Materialized Views &amp; Parallel Load Architecture</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>Materialized views are a <strong>&ldquo;pre-computed result set&rdquo;</strong> stored as a real table. For Data Vault, they&rsquo;re useful in the Information Mart layer where queries would otherwise recompute the same vault-to-mart transformation repeatedly. But they must be used carefully &mdash; they add storage and refresh overhead, and they must never appear in the Raw Vault.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Where Materialized Views Make Sense in Data Vault</h3>
+      <p>Three scenarios justify the overhead:</p>
+      <ul>
+        <li><strong>Current-record views:</strong> a materialized view over each satellite that always shows the latest row (<code>LOAD_END_DATE IS NULL</code>). Refreshed after each vault load cycle. Eliminates the per-query correlated subquery cost entirely.</li>
+        <li><strong>Pre-joined Hub + Satellite current state:</strong> combine the Hub&rsquo;s business key with all current satellite attributes into a single wide row per entity. This is the &ldquo;Customer 360&rdquo; pattern &mdash; one row per customer with all current attributes across demographics, contact, risk score, and more. BI tools query one flat table instead of doing vault joins.</li>
+        <li><strong>Star schema facts derived from vault joins:</strong> a FACT table in the Information Mart that joins the Raw Vault once and stores the result, rather than re-joining every time a BI tool queries it.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Materialized Current-Customer View (Hub + 3 Satellites)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Materialized current-customer view (refreshed after each vault load)
+-- Lives in the Information Mart or Business Vault layer — NEVER Raw Vault</span>
+<span class="kw">CREATE MATERIALIZED VIEW</span> MV_CUSTOMER_CURRENT <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+    h.<span class="str">CUSTOMER_BK</span>,
+    <span class="cm">-- From demographics satellite (current row only)</span>
+    d.FIRST_NAME,
+    d.LAST_NAME,
+    <span class="cm">-- From contact satellite (current row only)</span>
+    c.EMAIL,
+    c.PHONE,
+    <span class="cm">-- From risk score Business Satellite (current row only)</span>
+    f.CREDIT_LIMIT,
+    f.RISK_CATEGORY
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+
+<span class="cm">-- LEFT JOIN so customers with no satellite row still appear</span>
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> d
+    <span class="kw">ON</span>  d.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> d.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> c
+    <span class="kw">ON</span>  c.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> c.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+
+<span class="kw">LEFT JOIN</span> <span class="sat">BSAT_CUSTOMER_RISK_SCORE</span> f
+    <span class="kw">ON</span>  f.<span class="hub">HUB_CUSTOMER_HK</span> = h.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> f.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>;
+
+<span class="cm">-- Refresh after each vault load wave completes (PostgreSQL syntax):
+-- REFRESH MATERIALIZED VIEW MV_CUSTOMER_CURRENT;
+-- On Snowflake: replace with a Dynamic Table for managed incremental refresh</span></pre>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>Raw Vault is a materialized-view-free zone.</strong> The Raw Vault must remain a pure, unmodified record of source data. An MV in the Raw Vault creates a derived object whose refresh SQL could contain bugs &mdash; corrupting the audit record without anyone noticing. All materialized views belong in the <strong>Business Vault</strong> or <strong>Information Mart</strong> layers, where derived data is explicitly separated from raw source data.</p>
+    </div>
+
+    <div class="detail">
+      <h3>The 5-Wave Parallel Load Pipeline</h3>
+      <p>The single most impactful performance improvement for most Data Vault implementations is ensuring the load pipeline is truly parallel. Many teams have sequential steps that don&rsquo;t need to be. The correct architecture runs in five waves:</p>
+      <ul>
+        <li><strong>Waves 1, 2, and 3 are fully parallel within each wave</strong> &mdash; every job in a wave runs simultaneously. No job in Wave N waits for another job <em>in the same wave</em>.</li>
+        <li><strong>Wave gates are the only required sequencing</strong> &mdash; Wave 4 cannot start until Wave 3 is 100% complete. Wave 5 cannot start until Wave 4 is complete.</li>
+      </ul>
+    </div>
+
+    <!-- Parallel Load Pipeline Diagram -->
+    <div class="diagram" style="padding:2rem 1.5rem;overflow-x:auto;">
+      <p style="font-family:var(--font-code);font-size:0.63rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--teal);margin-bottom:1.75rem;display:flex;align-items:center;gap:0.5rem;"><span style="opacity:0.5;">//</span> Parallel Load Architecture &mdash; 5-Wave Pipeline</p>
+
+      <div style="display:flex;flex-direction:column;gap:0;min-width:500px;">
+
+        <!-- Wave 1 -->
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:1rem;align-items:center;background:var(--teal-dim);border:1px solid var(--teal-border);border-radius:10px 10px 0 0;padding:1rem 1.25rem;">
+          <div style="text-align:center;border-right:1px solid var(--teal-border);padding-right:1rem;">
+            <span style="font-family:var(--font-code);font-size:0.58rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">Wave 1</span>
+            <span style="font-size:1.4rem;display:block;margin-bottom:0.2rem;">&#9889;</span>
+            <span style="font-family:var(--font-code);font-size:0.6rem;color:var(--teal);letter-spacing:0.05em;">Parallel</span>
+          </div>
+          <div>
+            <p style="font-family:var(--font-head);font-weight:700;font-size:0.88rem;color:var(--teal);margin-bottom:0.6rem;">Source Extraction</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">CRM</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">ERP</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">Billing</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">Web Events</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--border-2);color:var(--ink-3);padding:0.18rem 0.5rem;border-radius:4px;">+ N sources</span>
+            </div>
+            <p style="font-size:0.75rem;color:var(--ink-3);line-height:1.5;">All source extracts run simultaneously in separate parallel jobs</p>
+          </div>
+        </div>
+
+        <!-- Gate 1→2 -->
+        <div style="text-align:center;padding:0.45rem 1rem;font-family:var(--font-code);font-size:0.62rem;color:var(--ink-3);letter-spacing:0.06em;background:var(--bg-2);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <span style="color:var(--teal);">&#8595;</span> gate: all Wave 1 jobs complete &mdash; trigger Wave 2 <span style="color:var(--teal);">&#8595;</span>
+        </div>
+
+        <!-- Wave 2 -->
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:1rem;align-items:center;background:var(--teal-dim);border:1px solid var(--teal-border);border-top:none;padding:1rem 1.25rem;">
+          <div style="text-align:center;border-right:1px solid var(--teal-border);padding-right:1rem;">
+            <span style="font-family:var(--font-code);font-size:0.58rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">Wave 2</span>
+            <span style="font-size:1.4rem;display:block;margin-bottom:0.2rem;">&#9889;</span>
+            <span style="font-family:var(--font-code);font-size:0.6rem;color:var(--teal);letter-spacing:0.05em;">Parallel</span>
+          </div>
+          <div>
+            <p style="font-family:var(--font-head);font-weight:700;font-size:0.88rem;color:var(--teal);margin-bottom:0.6rem;">Staging Loads</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">STG_CUSTOMER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">STG_ORDER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">STG_PRODUCT</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--border-2);color:var(--ink-3);padding:0.18rem 0.5rem;border-radius:4px;">STG_N&hellip;</span>
+            </div>
+            <p style="font-size:0.75rem;color:var(--ink-3);line-height:1.5;">Hashing, deduplication, HashDiff computation &mdash; all staging tables load in parallel</p>
+          </div>
+        </div>
+
+        <!-- Gate 2→3 -->
+        <div style="text-align:center;padding:0.45rem 1rem;font-family:var(--font-code);font-size:0.62rem;color:var(--ink-3);letter-spacing:0.06em;background:var(--bg-2);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <span style="color:var(--teal);">&#8595;</span> gate: all staging loads complete &mdash; trigger Wave 3 <span style="color:var(--teal);">&#8595;</span>
+        </div>
+
+        <!-- Wave 3 -->
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:1rem;align-items:center;background:var(--teal-dim);border:1px solid var(--teal-border);border-top:none;padding:1rem 1.25rem;">
+          <div style="text-align:center;border-right:1px solid var(--teal-border);padding-right:1rem;">
+            <span style="font-family:var(--font-code);font-size:0.58rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">Wave 3</span>
+            <span style="font-size:1.4rem;display:block;margin-bottom:0.2rem;">&#9889;</span>
+            <span style="font-family:var(--font-code);font-size:0.6rem;color:var(--teal);letter-spacing:0.05em;">Parallel</span>
+          </div>
+          <div>
+            <p style="font-family:var(--font-head);font-weight:700;font-size:0.88rem;color:var(--teal);margin-bottom:0.6rem;">Raw Vault Loads</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--teal-border);color:var(--teal);padding:0.18rem 0.5rem;border-radius:4px;">HUB_CUSTOMER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--gold-border);color:var(--gold);padding:0.18rem 0.5rem;border-radius:4px;">LINK_CO</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--purple-border);color:var(--purple);padding:0.18rem 0.5rem;border-radius:4px;">SAT_CUST_DEMO</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--purple-border);color:var(--purple);padding:0.18rem 0.5rem;border-radius:4px;">SAT_CUST_CNT</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--border-2);color:var(--ink-3);padding:0.18rem 0.5rem;border-radius:4px;">all simultaneously</span>
+            </div>
+            <p style="font-size:0.75rem;color:var(--ink-3);line-height:1.5;">All Hubs, Links, and Satellites load at the same time &mdash; no cross-table dependencies exist</p>
+          </div>
+        </div>
+
+        <!-- Gate 3→4 -->
+        <div style="text-align:center;padding:0.45rem 1rem;font-family:var(--font-code);font-size:0.62rem;color:var(--amber);letter-spacing:0.06em;background:var(--bg-2);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <span>&#8595;</span> gate: raw vault 100% complete &mdash; Wave 4 begins <span>&#8595;</span>
+        </div>
+
+        <!-- Wave 4 -->
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:1rem;align-items:center;background:var(--gold-dim);border:1px solid var(--gold-border);border-top:none;padding:1rem 1.25rem;">
+          <div style="text-align:center;border-right:1px solid var(--gold-border);padding-right:1rem;">
+            <span style="font-family:var(--font-code);font-size:0.58rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">Wave 4</span>
+            <span style="font-size:1.4rem;display:block;margin-bottom:0.2rem;">&#9881;</span>
+            <span style="font-family:var(--font-code);font-size:0.6rem;color:var(--gold);letter-spacing:0.05em;">After W3</span>
+          </div>
+          <div>
+            <p style="font-family:var(--font-head);font-weight:700;font-size:0.88rem;color:var(--gold);margin-bottom:0.6rem;">Business Vault Refresh</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--gold-border);color:var(--gold);padding:0.18rem 0.5rem;border-radius:4px;">PIT_CUSTOMER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--gold-border);color:var(--gold);padding:0.18rem 0.5rem;border-radius:4px;">PIT_ORDER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--gold-border);color:var(--gold);padding:0.18rem 0.5rem;border-radius:4px;">BRIDGE_CO</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--gold-border);color:var(--gold);padding:0.18rem 0.5rem;border-radius:4px;">BSAT_RISK</span>
+            </div>
+            <p style="font-size:0.75rem;color:var(--ink-3);line-height:1.5;">PIT and Bridge tables refresh in parallel &mdash; but only after all Raw Vault loads are confirmed complete</p>
+          </div>
+        </div>
+
+        <!-- Gate 4→5 -->
+        <div style="text-align:center;padding:0.45rem 1rem;font-family:var(--font-code);font-size:0.62rem;color:var(--purple);letter-spacing:0.06em;background:var(--bg-2);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <span>&#8595;</span> gate: business vault 100% complete &mdash; Wave 5 begins <span>&#8595;</span>
+        </div>
+
+        <!-- Wave 5 -->
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:1rem;align-items:center;background:var(--purple-dim);border:1px solid var(--purple-border);border-top:none;border-radius:0 0 10px 10px;padding:1rem 1.25rem;">
+          <div style="text-align:center;border-right:1px solid var(--purple-border);padding-right:1rem;">
+            <span style="font-family:var(--font-code);font-size:0.58rem;color:var(--purple);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.3rem;">Wave 5</span>
+            <span style="font-size:1.4rem;display:block;margin-bottom:0.2rem;">&#128200;</span>
+            <span style="font-family:var(--font-code);font-size:0.6rem;color:var(--purple);letter-spacing:0.05em;">After W4</span>
+          </div>
+          <div>
+            <p style="font-family:var(--font-head);font-weight:700;font-size:0.88rem;color:var(--purple);margin-bottom:0.6rem;">Information Mart Rebuild</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--purple-border);color:var(--purple);padding:0.18rem 0.5rem;border-radius:4px;">DIM_CUSTOMER</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--purple-border);color:var(--purple);padding:0.18rem 0.5rem;border-radius:4px;">FACT_ORDERS</span>
+              <span style="font-family:var(--font-code);font-size:0.68rem;background:var(--bg-3);border:1px solid var(--purple-border);color:var(--purple);padding:0.18rem 0.5rem;border-radius:4px;">MV_CUSTOMER_CURRENT</span>
+            </div>
+            <p style="font-size:0.75rem;color:var(--ink-3);line-height:1.5;">Star schema dimensions, facts, and materialized views refresh for BI tool consumption</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="tip">
+      <p><strong>Pipeline anti-pattern to eliminate:</strong> any sequential dependency <em>within</em> a wave. A common mistake is loading HUB_CUSTOMER, then waiting for it to complete before starting SAT_CUSTOMER_DEMOGRAPHICS. These tables have no DV foreign key enforcement and can always load in parallel. Audit your orchestration DAG (Airflow, ADF, dbt) and confirm that all objects in Wave 3 have only Wave 2 as their upstream dependency &mdash; not each other.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: INTERVIEW Q&A — PERFORMANCE
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 05</p>
+    <h2>Interview Q&amp;A: Performance</h2>
+
+    <p class="interview-section-label">Advanced / Architect Level Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What indexes does a Satellite table need and why?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Three index types cover the full satellite workload pattern:</p>
+          <p><strong>1. Composite primary key on (HUB_{ENTITY}_HK, LOAD_DATE)</strong> &mdash; the standard satellite PK, created automatically by the constraint. It enables efficient lookups by entity and exact timestamp and supports the satellite loader&rsquo;s duplicate-check query (which looks up existing rows by HK + LOAD_DATE before inserting).</p>
+          <p><strong>2. Filtered/partial index on (HUB_{ENTITY}_HK) WHERE LOAD_END_DATE IS NULL</strong> &mdash; the single most impactful satellite index. The dominant satellite query pattern is &ldquo;give me the current record for this entity.&rdquo; A filtered index covering only IS NULL rows is dramatically smaller than a full-table index and directly serves this exact pattern without ever reading historical rows. At scale &mdash; billions of satellite rows and hundreds of concurrent BI queries &mdash; this index is the difference between sub-second and a full table scan timeout.</p>
+          <p><strong>3. Index on HASH_DIFF (composite with HK)</strong> &mdash; supports the satellite loader&rsquo;s change-detection join. The loader compares incoming HashDiff values against the current satellite HashDiff; without an index this forces a full satellite scan for every load cycle.</p>
+          <p>On <strong>cloud platforms (Snowflake, BigQuery)</strong>, B-tree indexes are replaced by clustering keys. Cluster Satellites on <code>HUB_{ENTITY}_HK</code> to co-locate all rows for the same entity in the same micro-partition. Automatic clustering maintenance keeps the benefit as rows accumulate, without manual index rebuilds.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          When would you use a materialized view in a Data Vault architecture and when wouldn&rsquo;t you?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Use an MV when:</strong> the transformation is expensive (many vault joins, aggregations across large satellites), it is queried frequently by many concurrent users, and the underlying data changes infrequently relative to query frequency. Strong candidates: a current-state customer view joining Hub + all current Satellite rows (the &ldquo;Customer 360&rdquo; MV); a daily KPI summary built from a vault-to-mart query that aggregates millions of rows.</p>
+          <p><strong>Don&rsquo;t use MVs when:</strong> the vault loads very frequently (MV refresh overhead exceeds the benefit); the query is ad-hoc (materializing a one-off query wastes storage and refresh time); or on Snowflake, where <strong>Dynamic Tables</strong> are a superior alternative &mdash; they auto-refresh based on a configurable lag target and handle incremental updates far more efficiently than full MV rebuilds triggered manually.</p>
+          <p><strong>Data Vault rule:</strong> never add a materialized view to the Raw Vault layer. The Raw Vault must remain a pure, unmodified record of source data. An MV in the Raw Vault creates a derived object whose definition could contain bugs &mdash; silently corrupting the audit record. All MVs belong in the Business Vault or Information Mart layers, where derived data is explicitly distinct from raw source data.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How would you reduce the vault load window from 4 hours to under 1 hour?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Four levers, applied in order of impact:</p>
+          <p><strong>1. Parallelism audit</strong> &mdash; open the orchestration tool (Airflow, ADF, dbt DAG) and verify that all Hub, Link, and Satellite loads in Wave 3 are truly running simultaneously. Any sequential dependency <em>within</em> Wave 3 is an immediate win to remove. Most teams find at least one table that loads serially because someone added a dependency that isn&rsquo;t needed.</p>
+          <p><strong>2. Staging SQL profiling</strong> &mdash; the staging layer does the heaviest computation: hashing, deduplication, HashDiff generation, filtering. Profile staging query execution plans first before tuning vault loads. Fixing a hash key computation that recalculates on every row, or adding a date-range filter that was missing, can cut staging time by 50%+ before touching the vault layer at all.</p>
+          <p><strong>3. Partition pruning</strong> &mdash; ensure satellite change-detection queries only scan <em>recent</em> satellite data, not full history. Without partitioning, a satellite with five years of history forces the loader to scan all five years to find the current row per entity for comparison. Adding LOAD_DATE partitioning makes the loader scan only today&rsquo;s or this-month&rsquo;s partition.</p>
+          <p><strong>4. PIT table decoupling</strong> &mdash; if PIT refresh is on the Wave 3 critical path, move it to Wave 4 where it belongs. PIT tables are Business Vault objects and must only start after Raw Vault is complete anyway. Also switch to incremental PIT refresh (only changed entities) if currently running a full rebuild every cycle.</p>
+          <p>Finally, check for <strong>lock contention</strong>: if multiple parallel sessions load the same satellite table without partition isolation, they may serialize at the storage layer. On on-premises platforms, partition by hash key range and pin each load thread to its own partition to eliminate contention entirely.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the &ldquo;current record&rdquo; query problem in Data Vault and how do you solve it?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Every satellite can have many rows per entity, only one of which is &ldquo;current.&rdquo; Finding the current record requires either a correlated subquery:</p>
+          <p><code>WHERE LOAD_DATE = (SELECT MAX(LOAD_DATE) FROM sat WHERE HK = ?)</code></p>
+          <p>or a sentinel column filter: <code>WHERE LOAD_END_DATE IS NULL</code></p>
+          <p>At scale &mdash; billions of satellite rows, hundreds of concurrent BI queries &mdash; the correlated <code>MAX(LOAD_DATE)</code> subquery forces a satellite scan per entity per query. Even with indexes, at billion-row scale this fails to meet sub-second SLAs under concurrent load.</p>
+          <p><strong>Three solutions in increasing implementation complexity:</strong></p>
+          <p><strong>1. Maintain LOAD_END_DATE</strong> &mdash; when a new satellite row arrives, update the previous row&rsquo;s <code>LOAD_END_DATE</code> to the new row&rsquo;s <code>LOAD_DATE</code>. This enables a simple <code>WHERE LOAD_END_DATE IS NULL</code> filter. Combined with the filtered index on IS NULL rows, current-record lookups become single-row seeks. Trade-off: the satellite requires UPDATE operations alongside INSERTs, breaking the pure insert-only model. Most architects accept this trade-off for the performance gain.</p>
+          <p><strong>2. PIT tables</strong> &mdash; pre-materialize the <code>MAX(LOAD_DATE)</code> lookup for a fixed set of snapshot dates. Every query that joins through a PIT table gets the correct satellite LOAD_DATE without any aggregation at query time. Best suited for scheduled batch reporting against known, recurring snapshot dates.</p>
+          <p><strong>3. Current-state materialized views</strong> &mdash; pre-join Hub + all satellite current rows into a fast lookup table (e.g., <code>MV_CUSTOMER_CURRENT</code>) refreshed after each load cycle. BI tools query the MV directly &mdash; no vault joins, no correlated subqueries. Best for operational dashboards with high concurrency and strict sub-second latency requirements.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary">
+      <h3>&#9989; Module 08 Key Takeaways</h3>
+      <ul>
+        <li>Index every Satellite for three access patterns: <strong>composite PK on (HK, LOAD_DATE)</strong> for point-in-time lookups, a <strong>filtered index WHERE LOAD_END_DATE IS NULL</strong> for current-record queries (the dominant workload), and an index on <strong>HASH_DIFF</strong> for change detection during loads. On cloud platforms, replace all three with clustering keys.</li>
+        <li>PIT tables solve the expensive <code>MAX(LOAD_DATE)</code> correlated subquery problem. Use <strong>incremental refresh</strong> &mdash; only rebuild PIT rows for entities with new satellite data and snapshot dates not yet covered &mdash; to keep PIT refresh fast at any scale. Consider LATERAL joins for ad-hoc, non-recurring snapshot queries.</li>
+        <li>Partition vault tables by <strong>LOAD_DATE</strong> for time-bounded audit queries and by <strong>hash key range</strong> for parallel load isolation. On Snowflake use composite clustering on <code>(HUB_{ENTITY}_HK, TO_DATE(LOAD_DATE))</code> to gain both benefits simultaneously with automatic maintenance.</li>
+        <li>Materialized views belong in the <strong>Business Vault and Information Mart</strong> layers &mdash; never in the Raw Vault. On Snowflake prefer <strong>Dynamic Tables</strong> over traditional MVs for managed, incremental auto-refresh behavior without manual scheduling.</li>
+        <li>The <strong>5-wave parallel load pipeline</strong> (Extract &rarr; Stage &rarr; Raw Vault &rarr; Business Vault &rarr; Info Mart) eliminates sequential bottlenecks. Waves 1&ndash;3 are fully parallel within each wave. Waves 4 and 5 are gated behind their upstream wave. Audit your DAG to confirm true intra-wave parallelism &mdash; it is the fastest single fix for long load windows.</li>
+      </ul>
+    </div>
+
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module07.html">&#8592; Module 07: Business Vault</a>
+  <a href="module09.html" class="next">Module 09: Advanced Patterns &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 08 of 14 &mdash; Performance Optimization
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('08', 5);</script>
+</body>
+</html>

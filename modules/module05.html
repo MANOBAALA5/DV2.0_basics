@@ -1,0 +1,741 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Satellite Design Deep Dive — splitting strategies, CDC loading with HashDiff, Multi-Active Satellites, Effectivity Satellites, and full interview Q&A for Data Vault 2.0.">
+<title>Module 05: Satellite Design Deep Dive | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html" class="active">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">05</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)">
+      Intermediate &nbsp;&middot;&nbsp; Module 05 of 14
+    </span>
+    <h1>Satellite Design<br><em style="color:var(--gold)">Deep Dive</em></h1>
+    <p class="mod-hero-desc">
+      Satellites are where all the descriptive richness of your data lives. They record history automatically and enable full time-travel queries &mdash; but their design determines your query performance.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~55 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Intermediate</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;04</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: SATELLITE ANATOMY & STRUCTURE
+       ============================================================ -->
+  <article class="concept" data-topic="sat-anatomy" id="sat-anatomy">
+    <p class="concept-num">Concept 01</p>
+    <h2>Satellite Anatomy &amp; Structure</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A Satellite is attached to either a Hub or a Link. It stores all the descriptive attributes &mdash; names, addresses, amounts, statuses &mdash; that describe that entity or relationship. Because it&rsquo;s <strong>insert-only</strong> and every row has a timestamp, you automatically get <strong>complete historical tracking of every attribute change</strong> &mdash; for free. If a customer changes their email address on March 5th, a new satellite row is inserted with the new email. The old row stays forever. No data is ever lost.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        Think of a satellite as a <strong>versioned snapshot log</strong>. Every time something about an entity changes, the satellite appends a new entry stamped with the exact moment that version was recorded. It&rsquo;s like Git commits for your business data &mdash; every state of every attribute is preserved, and you can always &ldquo;checkout&rdquo; any point in time by filtering on LOAD_DATE.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Required Columns</h3>
+      <p>Every satellite &mdash; regardless of how many payload columns it has &mdash; must include these mandatory metadata columns. They are the backbone of DV2&rsquo;s auditability and change-detection patterns.</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>HUB_{ENTITY}_HK</code> or <code>LINK_{NAME}_HK</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>Foreign key to the parent Hub or Link. Part of the composite primary key.</td>
+        </tr>
+        <tr>
+          <td><code>LOAD_DATE</code></td>
+          <td><code>TIMESTAMP</code></td>
+          <td>When this version was loaded into the vault. Part of the composite PK. Never the business event date &mdash; always the technical load timestamp.</td>
+        </tr>
+        <tr>
+          <td><code>LOAD_END_DATE</code></td>
+          <td><code>TIMESTAMP NULL</code></td>
+          <td>When the next version arrived, closing this one. <code>NULL</code> = still the current active record. Optional &mdash; can be derived dynamically via PIT tables instead.</td>
+        </tr>
+        <tr>
+          <td><code>HASH_DIFF</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>MD5 or SHA-256 hash of all payload columns concatenated. Used for efficient change detection: matching HashDiff means no insert needed.</td>
+        </tr>
+        <tr>
+          <td><code>RECORD_SOURCE</code></td>
+          <td><code>VARCHAR(100)</code></td>
+          <td>The source system that provided this row (e.g., <code>CRM_SALESFORCE</code>, <code>ERP_SAP</code>). Enables lineage and conflict resolution between sources.</td>
+        </tr>
+        <tr>
+          <td><code>[payload columns]</code></td>
+          <td>Various</td>
+          <td>The actual descriptive data. All payload columns are concatenated and hashed to produce HASH_DIFF.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>Naming Conventions</h3>
+      <ul>
+        <li><strong>Hub satellite:</strong> <code>SAT_{ENTITY}_{CONTEXT}</code> &mdash; e.g., <code>SAT_CUSTOMER_DEMOGRAPHICS</code>, <code>SAT_CUSTOMER_CONTACT_INFO</code></li>
+        <li><strong>Link satellite:</strong> <code>SAT_L_{LINK_NAME}_{CONTEXT}</code> &mdash; e.g., <code>SAT_L_CUSTOMER_ORDER_DETAILS</code></li>
+        <li><strong>Effectivity satellite:</strong> <code>SAT_EFF_{LINK_NAME}</code> &mdash; e.g., <code>SAT_EFF_EMPLOYEE_DEPARTMENT</code></li>
+      </ul>
+      <p>The <code>{CONTEXT}</code> suffix differentiates satellites by source system, rate of change, or business domain. Without it, you end up with a single monolithic satellite per entity &mdash; the most common DV anti-pattern.</p>
+    </div>
+
+    <!-- SVG Diagram -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 270" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Satellite anatomy: Hub connected to Satellite with labeled columns">
+        <!-- Hub box -->
+        <rect x="20" y="50" width="195" height="170" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="117" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(34,211,200,0.55)" letter-spacing="1.5">HUB TABLE</text>
+        <text x="117" y="78" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="800" fill="#22d3c8">HUB_CUSTOMER</text>
+        <line x1="36" y1="88" x2="199" y2="88" stroke="rgba(34,211,200,0.2)" stroke-width="1"/>
+        <text x="44" y="107" font-family="JetBrains Mono,monospace" font-size="10" fill="#22d3c8">HUB_CUSTOMER_HK</text>
+        <text x="192" y="107" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">PK</text>
+        <text x="44" y="126" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.45)">CUSTOMER_BK</text>
+        <text x="44" y="145" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.45)">LOAD_DATE</text>
+        <text x="44" y="164" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.45)">RECORD_SOURCE</text>
+
+        <!-- Arrow -->
+        <line x1="215" y1="135" x2="305" y2="135" stroke="rgba(167,139,250,0.45)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <polygon points="303,130 316,135 303,140" fill="rgba(167,139,250,0.6)"/>
+        <text x="260" y="127" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.55)">HK FK</text>
+
+        <!-- Satellite box -->
+        <rect x="316" y="14" width="388" height="242" rx="8" fill="rgba(167,139,250,0.06)" stroke="rgba(167,139,250,0.35)" stroke-width="1.5"/>
+        <text x="510" y="9" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(167,139,250,0.55)" letter-spacing="1.5">SATELLITE TABLE</text>
+        <text x="510" y="40" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" font-weight="800" fill="#a78bfa">SAT_CUSTOMER_DEMOGRAPHICS</text>
+        <line x1="332" y1="50" x2="688" y2="50" stroke="rgba(167,139,250,0.2)" stroke-width="1"/>
+
+        <!-- Metadata label -->
+        <text x="336" y="68" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)" letter-spacing="1.2">METADATA</text>
+        <text x="336" y="84" font-family="JetBrains Mono,monospace" font-size="10" fill="#22d3c8">HUB_CUSTOMER_HK</text>
+        <text x="682" y="84" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">CHAR(32) PK FK</text>
+        <text x="336" y="102" font-family="JetBrains Mono,monospace" font-size="10" fill="#86efac">LOAD_DATE</text>
+        <text x="682" y="102" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(134,239,172,0.5)">TIMESTAMP PK</text>
+        <text x="336" y="120" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.4)">LOAD_END_DATE</text>
+        <text x="682" y="120" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.28)">TIMESTAMP NULL</text>
+        <text x="336" y="138" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.4)">HASH_DIFF</text>
+        <text x="682" y="138" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.28)">CHAR(32)</text>
+        <text x="336" y="156" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(238,242,255,0.4)">RECORD_SOURCE</text>
+        <text x="682" y="156" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.28)">VARCHAR(100)</text>
+
+        <!-- Divider -->
+        <line x1="332" y1="165" x2="688" y2="165" stroke="rgba(167,139,250,0.18)" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Payload label -->
+        <text x="336" y="181" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.55)" letter-spacing="1.2">PAYLOAD</text>
+        <text x="336" y="197" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(232,184,75,0.7)">FIRST_NAME, LAST_NAME</text>
+        <text x="336" y="214" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(232,184,75,0.7)">DATE_OF_BIRTH, GENDER_CODE</text>
+        <text x="336" y="231" font-family="JetBrains Mono,monospace" font-size="10" fill="rgba(232,184,75,0.7)">NATIONALITY, COUNTRY_CODE</text>
+        <text x="682" y="214" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.35)">all hashed &rarr; HASH_DIFF</text>
+      </svg>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; CREATE TABLE SAT_CUSTOMER_DEMOGRAPHICS</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAT_CUSTOMER_DEMOGRAPHICS: demographic attributes only</span>
+<span class="cm">-- Split from SAT_CUSTOMER_CONTACT and SAT_CUSTOMER_FINANCIALS by classification</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_CUSTOMER; part of PK</span>
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- when this version was loaded</span>
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP</span>     <span class="kw">NULL</span>,      <span class="cm">-- NULL = current active record</span>
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- hash of all payload columns</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,  <span class="cm">-- e.g. 'CRM_SALESFORCE'</span>
+    <span class="cm">-- Payload: demographic attributes only</span>
+    FIRST_NAME       <span class="typ">VARCHAR(100)</span>,
+    LAST_NAME        <span class="typ">VARCHAR(100)</span>,
+    DATE_OF_BIRTH    <span class="typ">DATE</span>,
+    GENDER_CODE      <span class="typ">CHAR(1)</span>,
+    NATIONALITY      <span class="typ">CHAR(3)</span>,
+    COUNTRY_CODE     <span class="typ">CHAR(3)</span>,
+    LANGUAGE_PREF    <span class="typ">VARCHAR(10)</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_cust_demo <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>),
+    <span class="kw">CONSTRAINT</span> fk_sat_cust_demo <span class="kw">FOREIGN KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>)
+        <span class="kw">REFERENCES</span> <span class="hub">HUB_CUSTOMER</span>(<span class="hub">HUB_CUSTOMER_HK</span>)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; CREATE TABLE SAT_PRODUCT_PRICING</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAT_PRODUCT_PRICING: fast-changing pricing data only</span>
+<span class="cm">-- Split from SAT_PRODUCT_DESCRIPTION (rare change) by rate of change</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_PRODUCT_PRICING</span> (
+    <span class="hub">HUB_PRODUCT_HK</span>   <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>         <span class="typ">TIMESTAMP</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_END_DATE</span>     <span class="typ">TIMESTAMP</span>      <span class="kw">NULL</span>,
+    <span class="str">HASH_DIFF</span>         <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>     <span class="typ">VARCHAR(100)</span>   <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Payload: pricing attributes only</span>
+    LIST_PRICE        <span class="typ">DECIMAL(18,4)</span>,
+    SALE_PRICE        <span class="typ">DECIMAL(18,4)</span>,
+    COST_PRICE        <span class="typ">DECIMAL(18,4)</span>,
+    CURRENCY_CODE     <span class="typ">CHAR(3)</span>,
+    PRICE_TIER        <span class="typ">VARCHAR(20)</span>,   <span class="cm">-- STANDARD, PREMIUM, BULK</span>
+    EFFECTIVE_DATE    <span class="typ">DATE</span>,          <span class="cm">-- business date price became active</span>
+    <span class="kw">CONSTRAINT</span> pk_sat_prod_price <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_PRODUCT_HK</span>, <span class="str">LOAD_DATE</span>),
+    <span class="kw">CONSTRAINT</span> fk_sat_prod_price <span class="kw">FOREIGN KEY</span> (<span class="hub">HUB_PRODUCT_HK</span>)
+        <span class="kw">REFERENCES</span> <span class="hub">HUB_PRODUCT</span>(<span class="hub">HUB_PRODUCT_HK</span>)
+);</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: SATELLITE SPLITTING STRATEGIES
+       ============================================================ -->
+  <article class="concept" data-topic="splitting" id="splitting">
+    <p class="concept-num">Concept 02</p>
+    <h2>Satellite Splitting Strategies</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Should all of a customer&rsquo;s attributes go in <strong>one big satellite</strong>, or should you split them into multiple satellites? The answer is: <strong>split them</strong>. But how? There are three rules: split by <em>SOURCE</em> (CRM data vs ERP data), split by <em>RATE OF CHANGE</em> (daily-changing prices should not share a satellite with rarely-changing account types), and split by <em>CLASSIFICATION</em> (demographic data vs financial data vs contact data).
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>1. Split by Source System</h3>
+      <p>
+        Each source system gets its own satellite for a given entity. If both CRM and ERP describe a customer, create <code>SAT_CUSTOMER_FROM_CRM</code> and <code>SAT_CUSTOMER_FROM_ERP</code> as separate tables.
+      </p>
+      <p>
+        <strong>Why it matters:</strong> when CRM data changes, only the CRM satellite receives a new row &mdash; the ERP satellite is completely unaffected. Without source splitting, a CRM change forces a new row that copies all ERP attributes alongside the changed CRM data, creating confusion about data origin and bloating history with unchanged ERP values.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>2. Split by Rate of Change</h3>
+      <p>
+        Fast-changing attributes belong in one satellite; slow-changing attributes in another. The classic example: a product&rsquo;s daily list price versus its description and category.
+      </p>
+      <p>
+        <code>SAT_PRODUCT_DAILY_PRICE</code> &mdash; changes every market day. <code>SAT_PRODUCT_DESCRIPTION</code> &mdash; changes perhaps once a quarter. If they share a satellite, every single price tick causes a new row that copies all product description columns verbatim &mdash; <strong>massive duplication</strong> with zero informational value on the description side.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>3. Split by Classification / Business Domain</h3>
+      <p>
+        Group attributes that business users and business processes naturally access together. For a Customer entity, three natural groupings emerge:
+      </p>
+      <ul>
+        <li><code>SAT_CUSTOMER_DEMOGRAPHICS</code> &mdash; name, date of birth, gender, nationality</li>
+        <li><code>SAT_CUSTOMER_CONTACT</code> &mdash; email, phone, postal address, preferred channel</li>
+        <li><code>SAT_CUSTOMER_FINANCIALS</code> &mdash; credit limit, account balance, risk score, payment terms</li>
+      </ul>
+      <p>
+        Each satellite can be <strong>independently loaded, versioned, and queried</strong>. A phone number change doesn&rsquo;t touch the demographics satellite. Compliance teams can access financials without scanning demographic columns.
+      </p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Rate of Change</th>
+          <th>Source System</th>
+          <th>Target Satellite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>FIRST_NAME, LAST_NAME, DATE_OF_BIRTH, GENDER</td>
+          <td style="color:var(--green)">Rare</td>
+          <td>CRM</td>
+          <td><code>SAT_CUSTOMER_DEMOGRAPHICS</code></td>
+        </tr>
+        <tr>
+          <td>EMAIL, PHONE, POSTAL_ADDRESS</td>
+          <td style="color:var(--amber)">Occasional</td>
+          <td>CRM</td>
+          <td><code>SAT_CUSTOMER_CONTACT</code></td>
+        </tr>
+        <tr>
+          <td>CREDIT_LIMIT, RISK_SCORE, PAYMENT_TERMS</td>
+          <td style="color:var(--amber)">Occasional</td>
+          <td>ERP</td>
+          <td><code>SAT_CUSTOMER_FINANCIALS</code></td>
+        </tr>
+        <tr>
+          <td>ACCOUNT_BALANCE, OUTSTANDING_AMOUNT</td>
+          <td style="color:var(--coral)">Frequent</td>
+          <td>ERP</td>
+          <td><code>SAT_CUSTOMER_BALANCE</code></td>
+        </tr>
+        <tr>
+          <td>LOYALTY_TIER, POINTS_BALANCE</td>
+          <td style="color:var(--coral)">Frequent</td>
+          <td>LOYALTY_APP</td>
+          <td><code>SAT_CUSTOMER_LOYALTY</code></td>
+        </tr>
+        <tr>
+          <td>SEGMENT_CODE, CAMPAIGN_COHORT</td>
+          <td style="color:var(--amber)">Occasional</td>
+          <td>MARKETING_PLATFORM</td>
+          <td><code>SAT_CUSTOMER_MARKETING</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p>
+        <strong>Anti-pattern: the catch-all satellite.</strong> The most common satellite design mistake is creating one giant satellite per entity &mdash; a single <code>SAT_CUSTOMER</code> with 60 columns from 4 source systems. This causes three serious problems:
+        <br><br>
+        <strong>(1) Excessive row duplication.</strong> Any single attribute change from any source creates a new row copying all 60 columns, even though 59 of them haven&rsquo;t changed.
+        <br><br>
+        <strong>(2) Complex load logic.</strong> CRM and ERP loads can&rsquo;t run independently. Every load must merge all sources into one row, handling NULLs and conflicts.
+        <br><br>
+        <strong>(3) Slow change detection.</strong> HASH_DIFF covers all 60 columns. Adding a new source column means recalculating the hash algorithm for all existing history.
+      </p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: CDC LOADING WITH HASHDIFF
+       ============================================================ -->
+  <article class="concept" data-topic="cdc-loading" id="cdc-loading">
+    <p class="concept-num">Concept 03</p>
+    <h2>CDC Loading with HashDiff</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Change Data Capture (CDC) in Data Vault means: <strong>only insert a new satellite row when the payload has actually changed</strong>. The HashDiff pattern makes this efficient &mdash; instead of comparing every single column between the incoming data and the current record, you compare two 32-character hash strings. Matching hashes mean the data is the same; skip the insert. Different hashes mean the data changed; insert a new row. One comparison instead of 30+ column comparisons.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Standard Satellite Load Pattern</h3>
+      <p>
+        The canonical satellite load uses a <code>LEFT JOIN</code> to the current record (where <code>LOAD_END_DATE IS NULL</code>) and inserts only when the HashDiff differs or no current record exists. This pattern is <strong>idempotent</strong> &mdash; running it twice produces identical results because the second run finds matching HashDiffs and inserts nothing.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Standard Satellite INSERT Pattern (CDC via HashDiff)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- ================================================================</span>
+<span class="cm">-- LOAD: SAT_CUSTOMER_DEMOGRAPHICS</span>
+<span class="cm">-- Pattern: INSERT only when HashDiff differs from current record</span>
+<span class="cm">-- ================================================================</span>
+<span class="kw">INSERT INTO</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="str">LOAD_DATE</span>,
+    <span class="str">LOAD_END_DATE</span>,
+    <span class="str">HASH_DIFF</span>,
+    <span class="str">RECORD_SOURCE</span>,
+    FIRST_NAME, LAST_NAME, EMAIL, DATE_OF_BIRTH, COUNTRY_CODE
+)
+<span class="kw">SELECT</span>
+    stg.<span class="hub">HUB_CUSTOMER_HK</span>,
+    stg.<span class="str">LOAD_DATE</span>,
+    <span class="kw">NULL</span>             <span class="kw">AS</span> LOAD_END_DATE,   <span class="cm">-- NULL = current record</span>
+    stg.<span class="str">HASH_DIFF</span>,
+    stg.<span class="str">RECORD_SOURCE</span>,
+    stg.FIRST_NAME, stg.LAST_NAME, stg.EMAIL,
+    stg.DATE_OF_BIRTH, stg.COUNTRY_CODE
+<span class="kw">FROM</span> STG_CUSTOMER_DEMOGRAPHICS stg
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> sat
+    <span class="kw">ON</span>  sat.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> stg.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> sat.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>       <span class="cm">-- JOIN to current record only</span>
+<span class="kw">WHERE</span> sat.<span class="hub">HUB_CUSTOMER_HK</span> <span class="kw">IS NULL</span>      <span class="cm">-- no existing record (new customer)</span>
+   <span class="kw">OR</span> sat.<span class="str">HASH_DIFF</span> <span class="op">!=</span> stg.<span class="str">HASH_DIFF</span>;  <span class="cm">-- payload has changed</span></pre>
+    </div>
+
+    <div class="detail">
+      <h3>Optional: Closing the Previous Record with LOAD_END_DATE</h3>
+      <p>
+        LOAD_END_DATE is not required in Data Vault, but populating it eliminates <code>MAX(LOAD_DATE)</code> aggregations when querying for the current record. If you choose to populate it, run this UPDATE immediately after each satellite load. It is the <strong>only legitimate UPDATE</strong> in a Data Vault implementation.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Optional LOAD_END_DATE Close Pattern</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Optional: close the previous record when a new version is inserted</span>
+<span class="cm">-- LOAD_END_DATE = the LOAD_DATE of the immediately following version</span>
+<span class="kw">UPDATE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> sat
+<span class="kw">SET</span> <span class="str">LOAD_END_DATE</span> <span class="op">=</span> (
+    <span class="kw">SELECT</span> <span class="fn">MIN</span>(s2.<span class="str">LOAD_DATE</span>)
+    <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s2
+    <span class="kw">WHERE</span> s2.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> sat.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> s2.<span class="str">LOAD_DATE</span> <span class="op">&gt;</span> sat.<span class="str">LOAD_DATE</span>
+)
+<span class="kw">WHERE</span> sat.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+  <span class="kw">AND</span> <span class="kw">EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span>
+    <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> s3
+    <span class="kw">WHERE</span> s3.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> sat.<span class="hub">HUB_CUSTOMER_HK</span>
+      <span class="kw">AND</span> s3.<span class="str">LOAD_DATE</span> <span class="op">&gt;</span> sat.<span class="str">LOAD_DATE</span>
+  );
+<span class="cm">-- Note: PIT tables in the Business Vault can replace this UPDATE entirely,</span>
+<span class="cm">--       keeping the Raw Vault 100% insert-only.</span></pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>PIT table alternative:</strong> LOAD_END_DATE updates are optional. Point-in-Time (PIT) tables in the Business Vault compute the active satellite row for any snapshot date dynamically &mdash; making the UPDATE step unnecessary. Many teams skip LOAD_END_DATE entirely and rely on PIT tables, keeping the Raw Vault purely insert-only.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: MULTI-ACTIVE SATELLITES
+       ============================================================ -->
+  <article class="concept" data-topic="multi-active" id="multi-active">
+    <p class="concept-num">Concept 04</p>
+    <h2>Multi-Active Satellites (MAS)</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A regular satellite stores <strong>one current value per attribute</strong>. But what about attributes that have <strong>multiple current values simultaneously</strong>? A customer can have 3 phone numbers, 2 email addresses, and 5 shipping addresses &mdash; ALL active at the same time. A Multi-Active Satellite (MAS) handles this with an <em>extra sequence column</em> added to the primary key, allowing multiple rows to coexist for the same entity at the same load timestamp.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Why a Regular Satellite Cannot Handle This</h3>
+      <p>
+        You cannot model multiple simultaneous values by adding columns (<code>PHONE_1</code>, <code>PHONE_2</code>, <code>PHONE_3</code>) &mdash; that&rsquo;s a repeating group that violates First Normal Form and breaks when a customer has a 4th phone. You cannot use separate rows per phone number either, because the composite primary key <code>(HUB_CUSTOMER_HK, LOAD_DATE)</code> permits only one row per entity per load date.
+      </p>
+      <p>
+        The MAS solves this by adding a <strong>PHONE_SEQ column</strong> to the PK, enabling multiple rows to share the same HK and LOAD_DATE while differing by sequence number.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Multi-Active Satellite: SAT_CUSTOMER_PHONE_MULTI_ACTIVE</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- MAS: multiple phone numbers simultaneously active for one customer</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_CUSTOMER_PHONE_MULTI_ACTIVE</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    PHONE_SEQ        <span class="typ">INT</span>          <span class="kw">NOT NULL</span>,  <span class="cm">-- extra PK component: 1, 2, 3 …</span>
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP</span>    <span class="kw">NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,  <span class="cm">-- hash of entire set, not one row</span>
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Payload</span>
+    PHONE_NUMBER     <span class="typ">VARCHAR(20)</span>,
+    PHONE_TYPE       <span class="typ">VARCHAR(20)</span>,            <span class="cm">-- MOBILE, HOME, WORK, FAX</span>
+    IS_PRIMARY       <span class="typ">CHAR(1)</span>,                <span class="cm">-- Y / N</span>
+    <span class="kw">CONSTRAINT</span> pk_sat_cust_phone <span class="kw">PRIMARY KEY</span>
+        (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>, PHONE_SEQ)
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Loading a MAS: The Set-Based Approach</h3>
+      <p>
+        The critical difference from a regular satellite load: the <strong>HashDiff covers the entire current set of rows</strong> for a given entity, not just one row. This means:
+      </p>
+      <ul>
+        <li>Compute HashDiff as a hash of ALL phone numbers for the customer, concatenated in a deterministic sort order (e.g., by PHONE_TYPE then PHONE_NUMBER).</li>
+        <li>If <strong>any single phone number changes</strong> &mdash; added, removed, or updated &mdash; the HashDiff changes, triggering a <strong>complete new set of rows</strong> under a new LOAD_DATE.</li>
+        <li>All rows in the new set share the same LOAD_DATE. PHONE_SEQ is assigned 1, 2, 3&hellip; for each phone number in the set.</li>
+        <li>This ensures you can always reconstruct the <strong>complete set of phone numbers at any point in time</strong> by querying for the most recent LOAD_DATE on or before your snapshot date.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Design guidance:</strong> Use a Multi-Active Satellite only when the attribute is genuinely set-valued and all members of the set are simultaneously valid. For sequenced history (value A replaced by value B over time), a regular satellite is correct. For concurrent values (three phone numbers all active right now), MAS is the right tool.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: EFFECTIVITY SATELLITES
+       ============================================================ -->
+  <article class="concept" data-topic="effectivity-sats" id="effectivity-sats">
+    <p class="concept-num">Concept 05</p>
+    <h2>Effectivity Satellites</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A Link says <strong>&ldquo;these two things were EVER related.&rdquo;</strong> An Effectivity Satellite (EFF SAT) on that link says <strong>&ldquo;these two things were related FROM this date TO that date.&rdquo;</strong> Without an EFF SAT, you cannot tell <em>when</em> a relationship was active. With one, you get full relationship lifecycle history &mdash; open date, close date, re-open events, everything.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        The Link is the marriage certificate &mdash; it proves the relationship happened. The Effectivity Satellite is the marriage <strong>and</strong> divorce record combined &mdash; it tells you the exact dates the relationship was active. You need both: the Link for permanent lineage, the EFF SAT for the active timeline.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Effectivity Satellite on LINK_EMPLOYEE_DEPARTMENT</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- EFF SAT: records WHEN the employee-department relationship was active</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_EFF_EMPLOYEE_DEPARTMENT</span> (
+    <span class="lnk">LINK_EMPLOYEE_DEPARTMENT_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>                    <span class="typ">TIMESTAMP</span>    <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_END_DATE</span>                <span class="typ">TIMESTAMP</span>    <span class="kw">NULL</span>,
+    <span class="str">HASH_DIFF</span>                    <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>                <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="cm">-- Effectivity payload</span>
+    EFFECTIVE_FROM               <span class="typ">DATE</span>         <span class="kw">NOT NULL</span>,  <span class="cm">-- business start date</span>
+    EFFECTIVE_TO                 <span class="typ">DATE</span>         <span class="kw">NULL</span>,      <span class="cm">-- NULL = still active</span>
+    IS_ACTIVE                    <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'Y'</span>,  <span class="cm">-- Y / N</span>
+    <span class="kw">CONSTRAINT</span> pk_sat_eff_ed <span class="kw">PRIMARY KEY</span>
+        (<span class="lnk">LINK_EMPLOYEE_DEPARTMENT_HK</span>, <span class="str">LOAD_DATE</span>)
+);
+
+<span class="cm">-- Query: was employee E001 in department D003 on 2024-06-01?</span>
+<span class="kw">SELECT</span> eff.IS_ACTIVE, eff.EFFECTIVE_FROM, eff.EFFECTIVE_TO
+<span class="kw">FROM</span>  <span class="lnk">LINK_EMPLOYEE_DEPARTMENT</span>      lnk
+<span class="kw">JOIN</span>  <span class="sat">SAT_EFF_EMPLOYEE_DEPARTMENT</span>   eff
+       <span class="kw">ON</span>  eff.<span class="lnk">LINK_EMPLOYEE_DEPARTMENT_HK</span> <span class="op">=</span> lnk.<span class="lnk">LINK_EMPLOYEE_DEPARTMENT_HK</span>
+       <span class="kw">AND</span> eff.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+       <span class="kw">AND</span> eff.EFFECTIVE_FROM  <span class="op">&lt;=</span> <span class="str">'2024-06-01'</span>
+       <span class="kw">AND</span> (eff.EFFECTIVE_TO <span class="kw">IS NULL</span> <span class="kw">OR</span> eff.EFFECTIVE_TO <span class="op">&gt;</span> <span class="str">'2024-06-01'</span>)
+<span class="kw">WHERE</span> lnk.<span class="hub">HUB_EMPLOYEE_HK</span>   <span class="op">=</span> <span class="fn">MD5</span>(<span class="str">'E001'</span>)
+  <span class="kw">AND</span> lnk.<span class="hub">HUB_DEPARTMENT_HK</span> <span class="op">=</span> <span class="fn">MD5</span>(<span class="str">'D003'</span>);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Loading an Effectivity Satellite</h3>
+      <p>
+        When you detect that a relationship is <strong>no longer being sent</strong> by the source system &mdash; the employee no longer appears in the department roster &mdash; you close the EFF SAT by <strong>inserting a new row</strong> with <code>IS_ACTIVE = 'N'</code> and <code>EFFECTIVE_TO = today</code>. This is still an INSERT, not an UPDATE, preserving the insert-only principle.
+      </p>
+      <p>
+        The original open row (<code>IS_ACTIVE = 'Y'</code>, <code>EFFECTIVE_TO = NULL</code>) remains untouched. The new closing row sits alongside it with a later LOAD_DATE, recording exactly when the system first detected the relationship end.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Detecting Relationship End</h3>
+      <p>
+        Compare today&rsquo;s full source extract to the current state in the EFF SAT. Keys present in the EFF SAT as IS_ACTIVE = &lsquo;Y&rsquo; but <strong>absent from today&rsquo;s extract</strong> have likely ended. Use a set-difference approach:
+      </p>
+      <ul>
+        <li>Load today&rsquo;s roster into staging.</li>
+        <li>LEFT JOIN against current active EFF SAT rows (<code>IS_ACTIVE = 'Y'</code>).</li>
+        <li>Where the staging join finds no match &mdash; insert a closing row with <code>IS_ACTIVE = 'N'</code>.</li>
+      </ul>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p>
+        <strong>Grace period caution.</strong> Absent from today&rsquo;s extract does not always mean the relationship ended &mdash; it might be missing due to a source outage, late-arriving data, or extract filter changes. Apply a <strong>grace period</strong> (e.g., absent for 3 consecutive load cycles) before inserting a closing row. Closing too eagerly creates false gaps in relationship history that are difficult to correct retroactively.
+      </p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A — SATELLITES
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A: Satellites</h2>
+
+    <p class="interview-section-label">Intermediate / Senior Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Why would you split one entity&rsquo;s attributes across multiple satellites?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Three reasons &mdash; source isolation, rate of change, and classification.</p>
+          <p><strong>(1) Source isolation:</strong> if CRM and ERP both describe a customer, give each its own satellite. A CRM change then does not create a new ERP satellite row. Without splitting, a CRM change forces a new row copying all ERP attributes &mdash; muddying lineage and bloating history with unchanged data.</p>
+          <p><strong>(2) Rate of change:</strong> a stock price changes every second; a product description changes monthly. Combine them and every price tick creates a new row with the full description copied verbatim &mdash; massive duplication with zero informational value on the description side. Separate them and each changes independently at its natural velocity.</p>
+          <p><strong>(3) Classification:</strong> group attributes that business users access together. Targeted satellites mean smaller row sizes, faster scans, and independent load pipelines for each domain. A compliance team can access financials without pulling demographic columns.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is LOAD_END_DATE and is it required in Data Vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>LOAD_END_DATE is the timestamp when the <strong>next version</strong> of a satellite record arrived, marking when the current record stopped being &ldquo;current.&rdquo; It is <strong>NOT required</strong> in Data Vault.</p>
+          <p>The vault is fully functional without it. You can always find the current record with <code>WHERE LOAD_END_DATE IS NULL</code>, or reconstruct any snapshot with <code>WHERE LOAD_DATE = (SELECT MAX(LOAD_DATE) FROM SAT WHERE HK = x AND LOAD_DATE &lt;= :snapshot_date)</code>.</p>
+          <p>LOAD_END_DATE is a <strong>query-performance optimization</strong>. It eliminates MAX() aggregations at query time and simplifies point-in-time queries. The trade-off: it requires an UPDATE to the previous row &mdash; the only legitimate UPDATE in Data Vault. Many teams use PIT tables in the Business Vault instead, keeping the Raw Vault entirely insert-only.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How do you handle satellite loading when a source sends duplicate rows for the same entity in one batch?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>De-duplicate in the <strong>staging layer</strong> before vault loading. Two standard approaches:</p>
+          <p><strong>DISTINCT:</strong> <code>SELECT DISTINCT HUB_CUSTOMER_HK, HASH_DIFF, FIRST_NAME, &hellip;</code> in the staging SELECT. Works when all columns of a duplicate row are truly identical.</p>
+          <p><strong>ROW_NUMBER():</strong> Assign ranks using a window function partitioned by HK and HashDiff, then filter to rank = 1. More robust when duplicates differ on non-payload columns (e.g., two rows with different extract timestamps but identical business data).</p>
+          <p>Add a <code>UNIQUE</code> constraint on <code>(HUB_CUSTOMER_HK, LOAD_DATE)</code> in the satellite DDL as a safety net. If a duplicate survives staging, the constraint prevents it from corrupting the satellite rather than silently accepting it.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Multi-Active Satellite and when do you need one?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A Multi-Active Satellite (MAS) stores <strong>multiple simultaneous active values</strong> for an attribute with a &ldquo;set&rdquo; nature &mdash; phone numbers, email addresses, product categories &mdash; where all values are valid concurrently, not sequentially.</p>
+          <p>A regular satellite cannot handle this: separate columns (<code>PHONE_1</code>, <code>PHONE_2</code>) is a repeating group anti-pattern, and separate rows without a discriminator would violate the composite PK <code>(HK, LOAD_DATE)</code>.</p>
+          <p>The MAS adds a <strong>SEQUENCE or RANK column</strong> to the PK, allowing multiple active rows per entity per LOAD_DATE. Loading requires inserting the <strong>complete current set</strong> every time any item in the set changes. The HashDiff covers the entire set, so you can always reconstruct the full set at any snapshot date by filtering to the most recent LOAD_DATE on or before that date.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does an Effectivity Satellite differ from regular satellite history?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>They answer different questions and track different things.</p>
+          <p>A <strong>regular satellite&rsquo;s</strong> LOAD_DATE history shows when <em>attributes changed</em> in the source system. Example: &ldquo;the customer&rsquo;s email changed on Jan 5th.&rdquo; It answers: <em>&ldquo;What was this entity&rsquo;s email on a given date?&rdquo;</em></p>
+          <p>An <strong>effectivity satellite</strong> tracks when a <em>relationship was active</em> &mdash; open and close dates for the Link itself. Example: &ldquo;this employee was in department D1 from Jan 2020 to Jun 2022, then moved to D2.&rdquo; It answers: <em>&ldquo;Was this employee in this department on a given date?&rdquo;</em></p>
+          <p>You can have both on the same Link simultaneously &mdash; a regular Link Satellite tracking relationship metadata changes, and an EFF SAT tracking the activity window. They are independent and serve different analytical purposes.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 05 Key Takeaways</h3>
+      <ul>
+        <li>Every satellite requires five metadata columns &mdash; parent HK (FK + part of PK), LOAD_DATE (PK), LOAD_END_DATE (optional; NULL = current), HASH_DIFF (change detection), and RECORD_SOURCE (lineage). Everything else is payload.</li>
+        <li>Always split satellites by three criteria: <strong>source system</strong> (CRM vs ERP get separate satellites), <strong>rate of change</strong> (fast-moving attributes away from slow-moving ones), and <strong>classification</strong> (demographics vs financials vs contact). A single catch-all satellite per entity is the most expensive DV design mistake.</li>
+        <li>The CDC load pattern inserts a new satellite row only when HashDiff differs from the current record. It is idempotent &mdash; safe to re-run. LOAD_END_DATE is optional; PIT tables in the Business Vault handle current-record lookups without requiring any UPDATE on the Raw Vault.</li>
+        <li>Multi-Active Satellites handle set-valued attributes (multiple simultaneous phone numbers, emails) by adding a SEQUENCE key to the composite PK. The HashDiff covers the entire set &mdash; any change in any member of the set triggers a complete new set of rows under a new LOAD_DATE.</li>
+        <li>Effectivity Satellites sit on Links and record relationship lifecycle (open/close dates), while regular satellites track attribute changes. Use a grace period before closing an EFF SAT to avoid false gaps caused by missing source extracts or outages.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module04.html">&#8592; Module 04: Links</a>
+  <a href="module06.html" class="next">Module 06: Raw Vault &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 05 of 14 &mdash; Satellite Design Deep Dive
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('05', 6);</script>
+</body>
+</html>

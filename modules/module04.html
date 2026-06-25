@@ -1,0 +1,772 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Data Vault 2.0 Link Design Deep Dive — anatomy, grain, many-to-many, hierarchical links, non-historized links, same-as links, and interview Q&A.">
+<title>Module 04: Link Design Deep Dive | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html" class="active">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">04</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)">
+      Intermediate &nbsp;&middot;&nbsp; Module 04 of 14
+    </span>
+    <h1>Link Design<br><em style="color:var(--gold)">Deep Dive</em></h1>
+    <p class="mod-hero-desc">
+      Links capture the relationships between your business entities. They are infinitely flexible &mdash; a relationship between 2 or 20 hubs loads the same way, and adding a new relationship never breaks existing loads.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~45 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Intermediate</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;03</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: LINK ANATOMY & GRAIN
+       ============================================================ -->
+  <article class="concept" data-topic="link-anatomy" id="link-anatomy">
+    <p class="concept-num">Concept 01</p>
+    <h2>Link Anatomy &amp; Grain</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        A Link is a table that says <strong>&ldquo;these two (or more) things are related.&rdquo;</strong> Where a Hub says &ldquo;this customer <em>EXISTS</em>,&rdquo; a Link says &ldquo;this customer <em>PLACED</em> this order.&rdquo; Links have no descriptive data &mdash; they just record the fact that the relationship happened.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Required Columns</h3>
+      <p>Every Link table in a Data Vault must contain exactly these columns &mdash; no more in the Raw Vault, no less ever:</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>LINK_{NAME}_HK</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>Primary Key. Hash of <em>all</em> participating Business Keys concatenated in a fixed order.</td>
+        </tr>
+        <tr>
+          <td><code>HUB_{A}_HK</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>Foreign key to the first participating Hub. NOT NULL.</td>
+        </tr>
+        <tr>
+          <td><code>HUB_{B}_HK</code></td>
+          <td><code>CHAR(32)</code></td>
+          <td>Foreign key to the second participating Hub. NOT NULL. (Repeat for each additional Hub.)</td>
+        </tr>
+        <tr>
+          <td><code>LOAD_DATE</code></td>
+          <td><code>TIMESTAMP</code></td>
+          <td>When this relationship was first seen. Set in staging; never updated.</td>
+        </tr>
+        <tr>
+          <td><code>RECORD_SOURCE</code></td>
+          <td><code>VARCHAR(100)</code></td>
+          <td>Which source system reported this relationship.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>The grain of a Link</strong> is the combination of all participating business keys. One unique combination = one row. A Link for &ldquo;Customer placed Order&rdquo; has <em>one row per unique (CustomerID, OrderID) pair</em> &mdash; not one row per order line item. Getting the grain wrong is the most common Link design mistake.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Two-Way Link: Customer &rarr; Order</h3>
+      <p>The classic two-hub link. The hash key is derived from both business keys concatenated in a deterministic order.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LINK_CUSTOMER_ORDER (two-way)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- LINK_CUSTOMER_ORDER: records the fact that a customer placed an order</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (
+    <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- MD5(CUSTOMER_BK || '||' || ORDER_BK)</span>
+    <span class="hub">HUB_CUSTOMER_HK</span>         <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_CUSTOMER</span>
+    <span class="hub">HUB_ORDER_HK</span>            <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_ORDER</span>
+    <span class="str">LOAD_DATE</span>               <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>           <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_lnk_co <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_CUSTOMER_ORDER_HK</span>)
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Three-Way Link: Order &rarr; Product &rarr; Warehouse</h3>
+      <p>A three-hub link works identically &mdash; just add the third FK and include the third BK in the hash. The structural pattern never changes regardless of how many hubs participate.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LINK_ORDER_PRODUCT (three-way link)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- LINK_ORDER_PRODUCT: order fulfilled from a specific warehouse location</span>
+<span class="cm">-- Grain: one row per unique (OrderID, ProductID, WarehouseID) combination</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_ORDER_PRODUCT</span> (
+    <span class="lnk">LINK_ORDER_PRODUCT_HK</span>   <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- MD5(ORDER_BK || '||' || PRODUCT_BK || '||' || WAREHOUSE_BK)</span>
+    <span class="hub">HUB_ORDER_HK</span>            <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_ORDER</span>
+    <span class="hub">HUB_PRODUCT_HK</span>          <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_PRODUCT</span>
+    <span class="hub">HUB_WAREHOUSE_HK</span>        <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_WAREHOUSE</span>
+    <span class="str">LOAD_DATE</span>               <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>           <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_lnk_op <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_ORDER_PRODUCT_HK</span>)
+);</pre>
+    </div>
+
+    <!-- SVG Diagram -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Link anatomy diagram showing two Hubs connected through a Link">
+        <!-- HUB_CUSTOMER -->
+        <rect x="20" y="60" width="160" height="80" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="100" y="88" text-anchor="middle" fill="#22d3c8" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600" letter-spacing="1">HUB_CUSTOMER</text>
+        <text x="100" y="108" text-anchor="middle" fill="rgba(238,242,255,0.45)" font-family="'JetBrains Mono',monospace" font-size="9">HUB_CUSTOMER_HK (PK)</text>
+        <text x="100" y="124" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="9">CUSTOMER_BK</text>
+        <!-- Arrow left to link -->
+        <line x1="180" y1="100" x2="270" y2="100" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="268,95 278,100 268,105" fill="rgba(232,184,75,0.7)"/>
+        <!-- LINK box -->
+        <rect x="280" y="42" width="160" height="116" rx="8" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.4)" stroke-width="1.5"/>
+        <text x="360" y="65" text-anchor="middle" fill="#e8b84b" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600" letter-spacing="1">LINK_CUSTOMER_ORDER</text>
+        <line x1="290" y1="72" x2="430" y2="72" stroke="rgba(232,184,75,0.2)" stroke-width="1"/>
+        <text x="360" y="89" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'JetBrains Mono',monospace" font-size="8.5">LINK_CUSTOMER_ORDER_HK (PK)</text>
+        <text x="360" y="106" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8.5">HUB_CUSTOMER_HK (FK)</text>
+        <text x="360" y="122" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8.5">HUB_ORDER_HK (FK)</text>
+        <text x="360" y="138" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="8.5">LOAD_DATE · RECORD_SOURCE</text>
+        <!-- Arrow right to hub -->
+        <line x1="440" y1="100" x2="532" y2="100" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="530,95 540,100 530,105" fill="rgba(232,184,75,0.7)"/>
+        <!-- HUB_ORDER -->
+        <rect x="542" y="60" width="160" height="80" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="622" y="88" text-anchor="middle" fill="#22d3c8" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600" letter-spacing="1">HUB_ORDER</text>
+        <text x="622" y="108" text-anchor="middle" fill="rgba(238,242,255,0.45)" font-family="'JetBrains Mono',monospace" font-size="9">HUB_ORDER_HK (PK)</text>
+        <text x="622" y="124" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="9">ORDER_BK</text>
+        <!-- Labels -->
+        <text x="230" y="94" text-anchor="middle" fill="rgba(232,184,75,0.5)" font-family="'DM Sans',sans-serif" font-size="9">FK</text>
+        <text x="490" y="94" text-anchor="middle" fill="rgba(232,184,75,0.5)" font-family="'DM Sans',sans-serif" font-size="9">FK</text>
+      </svg>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: MANY-TO-MANY RELATIONSHIPS
+       ============================================================ -->
+  <article class="concept" data-topic="many-to-many" id="many-to-many">
+    <p class="concept-num">Concept 02</p>
+    <h2>Many-to-Many Relationships</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Links naturally express many-to-many relationships, which are the bane of traditional dimensional modeling (you'd need a bridge table). In Data Vault, <strong>many-to-many is the DEFAULT.</strong> A customer can have many orders. An order can have many products. These are just Links with multiple Hub foreign keys &mdash; no special workaround required.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Common Many-to-Many Link Patterns</h3>
+      <p>Each example below captures a different business relationship. The structural pattern is identical &mdash; only the participating hubs change:</p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Link Name</th>
+          <th>Participating Hubs</th>
+          <th>Business Meaning</th>
+          <th>Grain</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>LINK_CUSTOMER_ORDER</code></td>
+          <td><code>HUB_CUSTOMER</code>, <code>HUB_ORDER</code></td>
+          <td>A customer placed an order</td>
+          <td>One row per unique (Customer, Order) pair</td>
+        </tr>
+        <tr>
+          <td><code>LINK_ORDER_PRODUCT</code></td>
+          <td><code>HUB_ORDER</code>, <code>HUB_PRODUCT</code></td>
+          <td>An order contained a product</td>
+          <td>One row per unique (Order, Product) pair</td>
+        </tr>
+        <tr>
+          <td><code>LINK_EMPLOYEE_DEPARTMENT_ROLE</code></td>
+          <td><code>HUB_EMPLOYEE</code>, <code>HUB_DEPARTMENT</code>, <code>HUB_ROLE</code></td>
+          <td>Employee holds a role in a department (3-way)</td>
+          <td>One row per unique (Employee, Department, Role) combination</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>Full Load Pattern for LINK_CUSTOMER_ORDER</h3>
+      <p>The load is always idempotent: the <code>NOT EXISTS</code> guard means running the same load twice produces the same result. Hub hash keys are pre-computed in the staging layer before this query runs.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Load LINK_CUSTOMER_ORDER from staging</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="kw">INSERT INTO</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> (
+    <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>,
+    <span class="hub">HUB_CUSTOMER_HK</span>,
+    <span class="hub">HUB_ORDER_HK</span>,
+    <span class="str">LOAD_DATE</span>,
+    <span class="str">RECORD_SOURCE</span>
+)
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.CUSTOMER_BK)), <span class="str">'-1'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.ORDER_BK)),    <span class="str">'-1'</span>)
+    )                           <span class="kw">AS</span> <span class="lnk">LINK_CUSTOMER_ORDER_HK</span>,
+    stg.<span class="hub">HUB_CUSTOMER_HK</span>,        <span class="cm">-- pre-computed in staging</span>
+    stg.<span class="hub">HUB_ORDER_HK</span>,           <span class="cm">-- pre-computed in staging</span>
+    stg.<span class="str">LOAD_DATE</span>,
+    stg.<span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span> STG_ORDERS stg
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="lnk">LINK_CUSTOMER_ORDER</span> lnk
+    <span class="kw">WHERE</span> lnk.<span class="lnk">LINK_CUSTOMER_ORDER_HK</span> = <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.CUSTOMER_BK)), <span class="str">'-1'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.ORDER_BK)),    <span class="str">'-1'</span>)
+    )
+);</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Hash key concatenation order must be fixed and documented.</strong> Always define the canonical key order (e.g., alphabetical by BK name) in your data model registry. Changing the order generates different hash values and breaks your link. Use <code>'||'</code> (double pipe) as the separator to avoid false collisions.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Why Many-to-Many is the Default in Data Vault</h3>
+      <p>In Kimball dimensional modeling, a many-to-many fact relationship requires a bridge table &mdash; an extra object that must be designed, built, and maintained separately from the dimension model. In Data Vault, every Link is structurally many-to-many by default. There is no bridge concept needed at the Raw Vault layer:</p>
+      <ul>
+        <li>Multiple customers can reference the same order (shared billing scenarios) without any schema change.</li>
+        <li>An order can appear in multiple links (LINK_CUSTOMER_ORDER and LINK_ORDER_PRODUCT) independently.</li>
+        <li>Adding a new source that sends additional (Customer, Order) pairs simply inserts new rows &mdash; it never restructures the table.</li>
+      </ul>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: HIERARCHICAL LINKS
+       ============================================================ -->
+  <article class="concept" data-topic="hierarchical-links" id="hierarchical-links">
+    <p class="concept-num">Concept 03</p>
+    <h2>Hierarchical Links</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Sometimes a relationship is between <strong>two instances of the same entity type</strong>. An employee manages another employee. A product is a component of another product. A region is a subdivision of another region. This is a &ldquo;hierarchical link&rdquo; or &ldquo;self-referencing link&rdquo; &mdash; it points back to the same Hub <em>twice</em>.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Self-Referencing Pattern</h3>
+      <p>
+        A hierarchical link has two foreign keys that both point to the same Hub. Because SQL column names must be unique within a table, you must use <strong>role-qualified column names</strong> to distinguish the two FKs. The role prefix describes the business role each key plays in the relationship.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LINK_EMPLOYEE_HIERARCHY (self-referencing)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- LINK_EMPLOYEE_HIERARCHY: records that one employee manages another</span>
+<span class="cm">-- Both FKs point to HUB_EMPLOYEE, distinguished by role prefix</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_EMPLOYEE_HIERARCHY</span> (
+    <span class="lnk">LINK_EMPLOYEE_HIERARCHY_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- MD5(MANAGER_BK || '||' || EMPLOYEE_BK)</span>
+    MANAGER_<span class="hub">HUB_EMPLOYEE_HK</span>     <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_EMPLOYEE (the manager)</span>
+    EMPLOYEE_<span class="hub">HUB_EMPLOYEE_HK</span>    <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_EMPLOYEE (the subordinate)</span>
+    <span class="str">LOAD_DATE</span>                   <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>               <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_lnk_eh <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_EMPLOYEE_HIERARCHY_HK</span>)
+);
+
+<span class="cm">-- Load example: Jane (E001) manages Bob (E002)</span>
+<span class="kw">INSERT INTO</span> <span class="lnk">LINK_EMPLOYEE_HIERARCHY</span>
+<span class="kw">SELECT</span>
+    <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.MANAGER_EMP_ID)),  <span class="str">'-1'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.EMPLOYEE_EMP_ID)), <span class="str">'-1'</span>)
+    )                             <span class="kw">AS</span> <span class="lnk">LINK_EMPLOYEE_HIERARCHY_HK</span>,
+    stg.MANAGER_<span class="hub">HUB_EMPLOYEE_HK</span>,  <span class="cm">-- pre-computed in staging</span>
+    stg.EMPLOYEE_<span class="hub">HUB_EMPLOYEE_HK</span>, <span class="cm">-- pre-computed in staging</span>
+    stg.<span class="str">LOAD_DATE</span>,
+    stg.<span class="str">RECORD_SOURCE</span>
+<span class="kw">FROM</span> STG_ORG_CHART stg
+<span class="kw">WHERE NOT EXISTS</span> (
+    <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> <span class="lnk">LINK_EMPLOYEE_HIERARCHY</span> lnk
+    <span class="kw">WHERE</span> lnk.<span class="lnk">LINK_EMPLOYEE_HIERARCHY_HK</span> = <span class="fn">MD5</span>(
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.MANAGER_EMP_ID)),  <span class="str">'-1'</span>) <span class="op">||</span> <span class="str">'||'</span> <span class="op">||</span>
+        <span class="fn">COALESCE</span>(<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(stg.EMPLOYEE_EMP_ID)), <span class="str">'-1'</span>)
+    )
+);</pre>
+    </div>
+
+    <!-- SVG Diagram: self-referencing link -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 220" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Self-referencing hierarchical link diagram">
+        <!-- HUB_EMPLOYEE (manager instance) -->
+        <rect x="20" y="20" width="190" height="80" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="115" y="46" text-anchor="middle" fill="#22d3c8" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600">HUB_EMPLOYEE</text>
+        <text x="115" y="64" text-anchor="middle" fill="rgba(238,242,255,0.45)" font-family="'JetBrains Mono',monospace" font-size="9">HUB_EMPLOYEE_HK (PK)</text>
+        <text x="115" y="82" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="9">EMPLOYEE_BK</text>
+        <text x="115" y="116" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'DM Sans',sans-serif" font-size="10" font-style="italic">(as MANAGER)</text>
+        <!-- Arrow from manager hub to link -->
+        <line x1="210" y1="60" x2="288" y2="85" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="284,80 294,87 284,94" fill="rgba(232,184,75,0.5)"/>
+        <!-- HUB_EMPLOYEE (employee instance) -->
+        <rect x="20" y="130" width="190" height="80" rx="8" fill="rgba(34,211,200,0.08)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="115" y="156" text-anchor="middle" fill="#22d3c8" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600">HUB_EMPLOYEE</text>
+        <text x="115" y="174" text-anchor="middle" fill="rgba(238,242,255,0.45)" font-family="'JetBrains Mono',monospace" font-size="9">HUB_EMPLOYEE_HK (PK)</text>
+        <text x="115" y="192" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="9">EMPLOYEE_BK</text>
+        <text x="115" y="218" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'DM Sans',sans-serif" font-size="10" font-style="italic">(as SUBORDINATE)</text>
+        <!-- Arrow from employee hub to link -->
+        <line x1="210" y1="170" x2="288" y2="140" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="284,135 294,142 284,149" fill="rgba(232,184,75,0.5)"/>
+        <!-- LINK box -->
+        <rect x="295" y="50" width="210" height="130" rx="8" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.4)" stroke-width="1.5"/>
+        <text x="400" y="74" text-anchor="middle" fill="#e8b84b" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="600">LINK_EMPLOYEE_HIERARCHY</text>
+        <line x1="305" y1="82" x2="495" y2="82" stroke="rgba(232,184,75,0.2)" stroke-width="1"/>
+        <text x="400" y="100" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'JetBrains Mono',monospace" font-size="8">LINK_EMPLOYEE_HIERARCHY_HK (PK)</text>
+        <text x="400" y="118" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8">MANAGER_HUB_EMPLOYEE_HK (FK)</text>
+        <text x="400" y="135" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8">EMPLOYEE_HUB_EMPLOYEE_HK (FK)</text>
+        <text x="400" y="152" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="8">LOAD_DATE</text>
+        <text x="400" y="168" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'JetBrains Mono',monospace" font-size="8">RECORD_SOURCE</text>
+        <!-- Role labels -->
+        <text x="250" y="72" text-anchor="middle" fill="rgba(232,184,75,0.6)" font-family="'DM Sans',sans-serif" font-size="9">MANAGER_</text>
+        <text x="250" y="162" text-anchor="middle" fill="rgba(232,184,75,0.6)" font-family="'DM Sans',sans-serif" font-size="9">EMPLOYEE_</text>
+        <!-- Same table label -->
+        <text x="590" y="110" text-anchor="middle" fill="rgba(238,242,255,0.3)" font-family="'DM Sans',sans-serif" font-size="11" font-style="italic">Same physical</text>
+        <text x="590" y="126" text-anchor="middle" fill="rgba(238,242,255,0.3)" font-family="'DM Sans',sans-serif" font-size="11" font-style="italic">table, two roles</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Role-qualified naming is mandatory.</strong> Use a meaningful business role prefix (e.g., <code>MANAGER_</code>, <code>EMPLOYEE_</code>) before the hub FK column name. Never use generic prefixes like <code>A_</code> or <code>1_</code> &mdash; the prefix must describe what business role that key plays in the relationship. This naming convention is enforced during audit and review.</p>
+    </div>
+
+    <div class="detail">
+      <h3>Other Common Hierarchical Link Patterns</h3>
+      <ul>
+        <li><strong>LINK_PRODUCT_COMPONENT</strong> &mdash; A product consists of another product (bill of materials). Role columns: <code>PARENT_HUB_PRODUCT_HK</code>, <code>COMPONENT_HUB_PRODUCT_HK</code>.</li>
+        <li><strong>LINK_ACCOUNT_PARENT_ACCOUNT</strong> &mdash; A ledger account rolls up to a parent account. Role columns: <code>CHILD_HUB_ACCOUNT_HK</code>, <code>PARENT_HUB_ACCOUNT_HK</code>.</li>
+        <li><strong>LINK_REGION_SUBDIVISION</strong> &mdash; A geographic region is part of a larger region. Role columns: <code>REGION_HUB_GEOGRAPHY_HK</code>, <code>PARENT_HUB_GEOGRAPHY_HK</code>.</li>
+      </ul>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: NON-HISTORIZED LINKS
+       ============================================================ -->
+  <article class="concept" data-topic="non-historized-links" id="non-historized-links">
+    <p class="concept-num">Concept 04</p>
+    <h2>Non-Historized Links</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        Most links record relationships that <em>can change over time</em> (a customer can switch from one account manager to another). But some links record <strong>events that are permanently true once they happen</strong>: a purchase transaction, a financial trade, a medical visit. These &ldquo;transaction links&rdquo; or &ldquo;non-historized links&rdquo; use a special pattern that avoids the overhead of tracking history that will never change.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Regular Links vs Non-Historized Links</h3>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Characteristic</th>
+          <th>Regular Link</th>
+          <th>Non-Historized (Transaction) Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>What it captures</strong></td>
+          <td>A relationship that may open and close over time</td>
+          <td>A point-in-time event that is permanently true</td>
+        </tr>
+        <tr>
+          <td><strong>Effectivity Satellite</strong></td>
+          <td style="color:var(--green)">Yes &mdash; tracks open/close window</td>
+          <td style="color:var(--amber)">Typically not needed &mdash; event is done</td>
+        </tr>
+        <tr>
+          <td><strong>Degenerate Dimensions</strong></td>
+          <td>No &mdash; attributes go in satellites</td>
+          <td style="color:var(--gold)">Yes &mdash; amounts, dates may live in the link</td>
+        </tr>
+        <tr>
+          <td><strong>Load volume</strong></td>
+          <td>Moderate &mdash; relationship changes are infrequent</td>
+          <td style="color:var(--coral)">High &mdash; often loaded from event streams</td>
+        </tr>
+        <tr>
+          <td><strong>Examples</strong></td>
+          <td>Employee&rarr;Department, Customer&rarr;AccountManager</td>
+          <td>Financial trade, ATM withdrawal, clickstream event</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="detail">
+      <h3>Transaction Link Design</h3>
+      <p>A non-historized link may include <strong>Degenerate Dimension (DD)</strong> columns directly in the link table. These are small, stable, transactional attributes that describe the event itself but do not warrant their own satellite because they will never change after the event occurs.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; LINK_FINANCIAL_TRANSACTION (non-historized with DDs)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- LINK_FINANCIAL_TRANSACTION: a non-historized (transaction) link</span>
+<span class="cm">-- Records individual financial events that are permanently true once executed</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">LINK_FINANCIAL_TRANSACTION</span> (
+    <span class="lnk">LINK_FINANCIAL_TRANSACTION_HK</span>  <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,
+    <span class="hub">HUB_ACCOUNT_HK</span>                 <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_ACCOUNT</span>
+    <span class="hub">HUB_PRODUCT_HK</span>                 <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_PRODUCT</span>
+    <span class="hub">HUB_CURRENCY_HK</span>                <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to HUB_CURRENCY</span>
+    <span class="cm">-- Degenerate Dimensions: event data that belongs in the link itself</span>
+    TRANSACTION_DATE               <span class="typ">DATE</span>           <span class="kw">NOT NULL</span>,  <span class="cm">-- DD: when did this happen?</span>
+    TRANSACTION_AMOUNT             <span class="typ">DECIMAL(18,4)</span>  <span class="kw">NOT NULL</span>,  <span class="cm">-- DD: how much?</span>
+    <span class="str">LOAD_DATE</span>                      <span class="typ">TIMESTAMP</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>                  <span class="typ">VARCHAR(100)</span>   <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_lnk_ft <span class="kw">PRIMARY KEY</span> (<span class="lnk">LINK_FINANCIAL_TRANSACTION_HK</span>)
+);</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Degenerate Dimensions (DDs)</strong> &mdash; small, stable transactional attributes that don&rsquo;t warrant their own satellite &mdash; can live in the link itself. Examples: transaction amounts, event dates, quantities, confirmation numbers. The rule of thumb: if the attribute <em>might ever change</em>, use a satellite instead. If it is permanently frozen at event time, a DD in the link is acceptable and efficient.</p>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>Do not confuse LOAD_DATE with TRANSACTION_DATE.</strong> <code>LOAD_DATE</code> is always when the data arrived in the vault (system time). <code>TRANSACTION_DATE</code> is the business event date (when the trade was executed). These are separate and both matter for different query types &mdash; operational queries use business date; lineage audit uses load date.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: SAME-AS LINKS
+       ============================================================ -->
+  <article class="concept" data-topic="same-as-links" id="same-as-links">
+    <p class="concept-num">Concept 05</p>
+    <h2>Same-As Links (SAL)</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5</p>
+      <p>
+        You have a customer in your CRM with ID <code>CRM-1001</code> and the same customer in your ERP with ID <code>ERP-XYZ-99</code>. They&rsquo;re the same person but the source systems don&rsquo;t know that. A <strong>Same-As Link (SAL)</strong> is a special link that says &ldquo;these two business keys from different sources refer to the same real-world entity.&rdquo; It&rsquo;s the foundation of <em>Master Data Management</em> in Data Vault.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>SAL Structure: Driver and Dependent</h3>
+      <p>
+        A Same-As Link always involves exactly two hub hash keys that both point to the <em>same Hub</em>. The <strong>Driver key</strong> is the &ldquo;golden record&rdquo; or canonical identity &mdash; the one the business has decided to trust. The <strong>Dependent key</strong> is the matched alternative identity that resolves to the driver. Both original keys are preserved in the Hub with their full history &mdash; the SAL only declares equivalence.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; SAL_CUSTOMER (Same-As Link)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SAL_CUSTOMER: master data identity matching for HUB_CUSTOMER</span>
+<span class="cm">-- Records that two different business keys refer to the same real-world customer</span>
+<span class="kw">CREATE TABLE</span> <span class="lnk">SAL_CUSTOMER</span> (
+    <span class="lnk">SAL_CUSTOMER_HK</span>           <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    DRIVER_<span class="hub">HUB_CUSTOMER_HK</span>    <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- "golden" / canonical key</span>
+    DEPENDENT_<span class="hub">HUB_CUSTOMER_HK</span> <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,  <span class="cm">-- matched duplicate</span>
+    <span class="str">LOAD_DATE</span>                  <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>              <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    <span class="kw">CONSTRAINT</span> pk_sal_cust <span class="kw">PRIMARY KEY</span> (<span class="lnk">SAL_CUSTOMER_HK</span>)
+);
+
+<span class="cm">-- Associated satellite: records the matching confidence and method</span>
+<span class="kw">CREATE TABLE</span> <span class="sat">SAT_SAL_CUSTOMER</span> (
+    <span class="lnk">SAL_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>      <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(100)</span>  <span class="kw">NOT NULL</span>,
+    MATCH_CONFIDENCE <span class="typ">DECIMAL(5,2)</span>,             <span class="cm">-- 0.00 to 100.00</span>
+    MATCH_METHOD     <span class="typ">VARCHAR(100)</span>,             <span class="cm">-- 'EXACT_EMAIL', 'FUZZY_NAME_ADDR', etc.</span>
+    MATCH_DATE       <span class="typ">DATE</span>,
+    IS_ACTIVE        <span class="typ">CHAR(1)</span>       <span class="kw">DEFAULT</span> <span class="str">'Y'</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_sal_cust <span class="kw">PRIMARY KEY</span> (<span class="lnk">SAL_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+);</pre>
+    </div>
+
+    <!-- SVG: SAL diagram -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Same-As Link diagram showing two business keys mapped to one real-world entity">
+        <!-- CRM source -->
+        <rect x="10" y="20" width="170" height="70" rx="6" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.3)" stroke-width="1.5"/>
+        <text x="95" y="44" text-anchor="middle" fill="#a78bfa" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="600">CRM SOURCE</text>
+        <text x="95" y="62" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'JetBrains Mono',monospace" font-size="8.5">CUSTOMER_BK = CRM-1001</text>
+        <text x="95" y="78" text-anchor="middle" fill="rgba(34,211,200,0.6)" font-family="'JetBrains Mono',monospace" font-size="8">HUB_CUSTOMER_HK = A3F2...</text>
+        <!-- ERP source -->
+        <rect x="10" y="120" width="170" height="70" rx="6" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.3)" stroke-width="1.5"/>
+        <text x="95" y="144" text-anchor="middle" fill="#a78bfa" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="600">ERP SOURCE</text>
+        <text x="95" y="162" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'JetBrains Mono',monospace" font-size="8.5">CUSTOMER_BK = ERP-XYZ-99</text>
+        <text x="95" y="178" text-anchor="middle" fill="rgba(34,211,200,0.6)" font-family="'JetBrains Mono',monospace" font-size="8">HUB_CUSTOMER_HK = B7C1...</text>
+        <!-- Arrows to SAL -->
+        <line x1="180" y1="55" x2="258" y2="90" stroke="rgba(232,184,75,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="180" y1="155" x2="258" y2="120" stroke="rgba(232,184,75,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <!-- SAL box -->
+        <rect x="265" y="60" width="190" height="90" rx="8" fill="rgba(232,184,75,0.08)" stroke="rgba(232,184,75,0.4)" stroke-width="1.5"/>
+        <text x="360" y="82" text-anchor="middle" fill="#e8b84b" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="600">SAL_CUSTOMER</text>
+        <line x1="275" y1="89" x2="445" y2="89" stroke="rgba(232,184,75,0.2)" stroke-width="1"/>
+        <text x="360" y="107" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8">DRIVER_HUB_CUSTOMER_HK</text>
+        <text x="360" y="122" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'JetBrains Mono',monospace" font-size="8">(A3F2... = CRM golden record)</text>
+        <text x="360" y="137" text-anchor="middle" fill="rgba(34,211,200,0.7)" font-family="'JetBrains Mono',monospace" font-size="8">DEPENDENT_HUB_CUSTOMER_HK</text>
+        <!-- Arrow to result -->
+        <line x1="455" y1="105" x2="530" y2="105" stroke="rgba(74,222,128,0.5)" stroke-width="1.5"/>
+        <polygon points="528,100 538,105 528,110" fill="rgba(74,222,128,0.6)"/>
+        <!-- Unified customer -->
+        <rect x="540" y="72" width="170" height="66" rx="8" fill="rgba(74,222,128,0.07)" stroke="rgba(74,222,128,0.3)" stroke-width="1.5"/>
+        <text x="625" y="96" text-anchor="middle" fill="#4ade80" font-family="'JetBrains Mono',monospace" font-size="9.5" font-weight="600">GOLDEN RECORD</text>
+        <text x="625" y="113" text-anchor="middle" fill="rgba(238,242,255,0.5)" font-family="'DM Sans',sans-serif" font-size="9">Business Vault view</text>
+        <text x="625" y="128" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="'DM Sans',sans-serif" font-size="9">unified customer identity</text>
+        <!-- Labels -->
+        <text x="220" y="72" text-anchor="middle" fill="rgba(232,184,75,0.5)" font-family="'DM Sans',sans-serif" font-size="8.5">DRIVER</text>
+        <text x="220" y="142" text-anchor="middle" fill="rgba(232,184,75,0.5)" font-family="'DM Sans',sans-serif" font-size="8.5">DEPENDENT</text>
+      </svg>
+    </div>
+
+    <div class="detail">
+      <h3>Driver vs Dependent &mdash; The Design Rules</h3>
+      <ul>
+        <li>The <strong>DRIVER key</strong> is the system-of-record or highest-trust source for this entity type. It becomes the canonical key used in Business Vault golden-record views.</li>
+        <li>The <strong>DEPENDENT key</strong> is an alternative identity that has been matched to the driver. It can come from any other source system.</li>
+        <li>The matching confidence and method (exact email match, fuzzy name+address match, ML-model match) are stored in <code>SAT_SAL_CUSTOMER</code> &mdash; not in the SAL itself.</li>
+        <li>The Raw Vault <em>never consolidates</em> the two keys. Both <code>CRM-1001</code> and <code>ERP-XYZ-99</code> remain in <code>HUB_CUSTOMER</code> with full independent history. The Business Vault uses the SAL to produce unified views.</li>
+      </ul>
+    </div>
+
+    <div class="detail">
+      <h3>When to Use Same-As Links</h3>
+      <ul>
+        <li><strong>Master Data Management (MDM)</strong> &mdash; Matching a customer in CRM to the same customer in ERP.</li>
+        <li><strong>Post-acquisition consolidation</strong> &mdash; A company is acquired; their customer IDs must be reconciled with existing IDs.</li>
+        <li><strong>Duplicate detection</strong> &mdash; Analytics finds two customer records that represent the same person (same email, same address). A SAL declares the equivalence without deleting either record.</li>
+        <li><strong>System migration</strong> &mdash; A legacy system is replaced; old IDs and new IDs coexist during transition and must be linked.</li>
+      </ul>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A — LINKS
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A &mdash; Links</h2>
+
+    <p class="interview-section-label">Intermediate / Senior Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the grain of a Link and why does it matter?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>The grain of a Link is the <strong>unique combination of all participating Hub hash keys</strong>. One row = one unique combination of those keys. This matters for two critical reasons:</p>
+          <p><strong>1. Idempotency:</strong> Because the grain is hashed and enforced via a NOT EXISTS filter (or MERGE), loading the same relationship from multiple source systems is idempotent &mdash; the same hash key is generated regardless of which system sent it, so duplicate rows are never inserted.</p>
+          <p><strong>2. Scope of the relationship:</strong> The grain determines what the link can represent. A Link for &ldquo;Customer placed Order&rdquo; records one row per unique (CustomerID, OrderID) pair. If you need one row per <em>order line item</em>, you need a different link with a different grain &mdash; perhaps including a LineItemID in the hash. Mixing grains in one link is a fatal design error.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Can a Link contain more than two Hubs? Give an example.
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Yes &mdash; there is no upper limit. Three-way and four-way links are common in enterprise implementations. The structure is identical to a two-way link: just add additional Hub FK columns and include each additional BK in the concatenated hash.</p>
+          <p><strong>Example &mdash; LINK_TRADE_EXECUTION in financial services:</strong></p>
+          <p>This link might reference four hubs: <code>HUB_TRADER</code> (who traded), <code>HUB_INSTRUMENT</code> (what was traded), <code>HUB_COUNTERPARTY</code> (with whom), and <code>HUB_VENUE</code> (where it was traded). The link hash key is computed as:</p>
+          <code>MD5(TRADER_BK || '||' || INSTRUMENT_BK || '||' || COUNTERPARTY_BK || '||' || VENUE_BK)</code>
+          <p style="margin-top:0.75rem">The grain: one row per unique (Trader, Instrument, Counterparty, Venue) combination. Each of the four Hub FKs is populated with a pre-computed hash from staging. The load pattern is identical to any two-way link.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is an Effectivity Satellite and how does it relate to a Link?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>The split of concern:</strong> A Link records that a relationship <em>ever existed</em>. An Effectivity Satellite (EFF SAT) on that link records <em>when</em> the relationship was active.</p>
+          <p>The EFF SAT has two key business dates: an <strong>open date</strong> (when the relationship started) and a <strong>close date</strong> (when it ended &mdash; NULL means still active). These are business dates, not load dates.</p>
+          <p><strong>Example:</strong> <code>LINK_EMPLOYEE_DEPARTMENT</code> records that employee E1 <em>ever</em> worked in department D1. <code>SAT_EFF_EMPLOYEE_DEPARTMENT</code> records that this relationship was active from <code>2020-01-15</code> to <code>2022-06-30</code> (when they transferred).</p>
+          <p>Without the EFF SAT, you can only answer: &ldquo;Did they <em>ever</em> work there?&rdquo; With it, you can answer: &ldquo;Were they <em>working there on a specific date?</em>&rdquo; &mdash; which is what most business queries actually need.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does a Non-Historized Link differ from a regular link?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Regular links</strong> record relationships that can change over time (a customer can switch account managers). They typically receive an Effectivity Satellite to track when the relationship was active and when it closed.</p>
+          <p><strong>Non-historized transaction links</strong> record transactional events that, once they happen, are permanently true (a customer made a purchase, a transaction was executed). Key differences:</p>
+          <p><strong>1. No Effectivity Satellite:</strong> The transaction happened, it is done. There is no &ldquo;open/close window&rdquo; to track.</p>
+          <p><strong>2. Degenerate Dimensions in the link:</strong> Transaction-specific attributes like TRANSACTION_AMOUNT, TRANSACTION_DATE, or QUANTITY may be stored directly in the link itself because they will never change after the event. Regular links would place changing attributes in a satellite instead.</p>
+          <p><strong>3. High volume loading:</strong> Transaction links are often loaded from high-volume event streams. Their design optimizes for insert throughput over query flexibility.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Same-As Link and when would you use one?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A <strong>Same-As Link (SAL)</strong> records that two different Hub business keys refer to the same real-world entity. Unlike a regular link between two <em>different</em> entities, a SAL points back to the same Hub twice &mdash; just like a hierarchical link, but with a semantically distinct purpose: declaring identity equivalence.</p>
+          <p><strong>Use cases:</strong></p>
+          <p><strong>1. Master Data Management:</strong> Matching a customer in CRM (<code>CRM-1001</code>) to the same customer in ERP (<code>ERP-XYZ-99</code>). The SAL states: &ldquo;these two business keys are the same person.&rdquo;</p>
+          <p><strong>2. Post-acquisition consolidation:</strong> A company is acquired and their customer IDs need to be reconciled with your existing IDs. The SAL bridges old and new without deleting either.</p>
+          <p><strong>3. Duplicate detection:</strong> Analytics discovers that two customer records are the same person. A SAL declares the equivalence. The Business Vault then uses the SAL to build a unified &ldquo;golden record&rdquo; view while the Raw Vault preserves both original keys with full, independent history.</p>
+          <p>The matching confidence and method are stored in a dedicated satellite on the SAL (<code>SAT_SAL_{ENTITY}</code>) &mdash; not in the SAL table itself, which remains a structural metadata object.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 04 Key Takeaways</h3>
+      <ul>
+        <li>A Link records that a relationship exists between two or more business entities. It contains no descriptive data &mdash; only hub FKs, a composite hash key, load date, and record source.</li>
+        <li>The grain of a Link is the unique combination of all participating business keys. One wrong grain decision poisons the entire downstream query layer &mdash; always define grain before writing DDL.</li>
+        <li>Hierarchical (self-referencing) links point back to the same Hub twice. Use role-qualified column prefixes (e.g., <code>MANAGER_</code>, <code>EMPLOYEE_</code>) to make both FKs unambiguous and auditable.</li>
+        <li>Non-historized (transaction) links capture permanently-true events. They may include Degenerate Dimensions (amounts, dates) directly in the link and typically do not receive Effectivity Satellites.</li>
+        <li>Same-As Links (SALs) are the foundation of MDM in Data Vault. They declare identity equivalence between two business keys without destroying either key&rsquo;s independent history in the Raw Vault.</li>
+      </ul>
+    </div>
+
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module03.html">&#8592; Module 03: Hub Design</a>
+  <a href="module05.html" class="next">Module 05: Satellites &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 04 of 14 &mdash; Link Design Deep Dive
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('04', 6);</script>
+</body>
+</html>

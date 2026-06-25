@@ -1,0 +1,642 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Module 10: Automation &amp; Metadata in Data Vault 2.0. Metadata-driven development, dbt macros, WhereScape RED, Jinja2 code generators, and data contracts for enterprise vault automation.">
+<title>Module 10: Automation &amp; Metadata | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html" class="active">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics…" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">10</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--coral);border-color:rgba(248,113,113,0.25);background:var(--coral-dim)">
+      Advanced &nbsp;&middot;&nbsp; Module 10 of 14
+    </span>
+    <h1>Automation &amp;<br><em style="color:var(--gold)">Metadata</em></h1>
+    <p class="mod-hero-desc">
+      Manual Data Vault development doesn't scale. Learn how metadata-driven patterns, dbt macros, and automation tools eliminate repetitive code and let you build vault structures at enterprise speed.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>5 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~55 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Advanced</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;09</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: METADATA-DRIVEN DEVELOPMENT
+       ============================================================ -->
+  <article class="concept" data-topic="metadata-driven" id="metadata-driven">
+    <p class="concept-num">Concept 01</p>
+    <h2>Metadata-Driven Development</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        In a large enterprise Data Vault, you might have <strong>200+ Hub/Link/Satellite tables</strong>. Writing DDL and ETL for each one manually is madness. Metadata-driven development means storing the <em>description</em> of your vault structures in a configuration table, then running a code generator that writes the actual SQL. Change the config, regenerate the code.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Metadata Registry Pattern</h3>
+      <p>
+        The foundation of metadata-driven development is a <strong>vault object registry</strong> &mdash; a set of configuration tables that describe every Hub, Link, and Satellite you need, along with their columns, data types, and relationships. The code generator reads these tables and produces DDL and ETL automatically.
+      </p>
+      <p>
+        Two core tables are all you need to start: one for the <strong>vault objects</strong> (which tables exist) and one for the <strong>columns</strong> (what each table contains). Everything else &mdash; naming conventions, hash algorithms, default constraints &mdash; lives in the templates, not the metadata.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Metadata Configuration Tables</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Metadata: vault object registry</span>
+<span class="kw">CREATE TABLE</span> META_VAULT_OBJECT (
+    <span class="str">OBJECT_ID</span>         <span class="typ">INT</span>          <span class="kw">NOT NULL</span> IDENTITY,
+    <span class="str">OBJECT_TYPE</span>       <span class="typ">VARCHAR(10)</span>  <span class="kw">NOT NULL</span>,  <span class="cm">-- 'HUB', 'LINK', 'SAT'</span>
+    <span class="str">OBJECT_NAME</span>       <span class="typ">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,  <span class="cm">-- e.g., 'HUB_CUSTOMER'</span>
+    <span class="str">SCHEMA_NAME</span>       <span class="typ">VARCHAR(50)</span>  <span class="kw">NOT NULL</span> <span class="kw">DEFAULT</span> <span class="str">'RAW_VAULT'</span>,
+    <span class="str">BUSINESS_KEY</span>      <span class="typ">VARCHAR(200)</span>,           <span class="cm">-- for Hubs: the BK column name</span>
+    <span class="str">PARENT_OBJECT</span>     <span class="typ">VARCHAR(200)</span>,           <span class="cm">-- for Sats: the Hub/Link they belong to</span>
+    <span class="str">SOURCE_SYSTEM</span>     <span class="typ">VARCHAR(100)</span>,
+    <span class="str">IS_ACTIVE</span>         <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'Y'</span>,
+    <span class="str">CREATED_DATE</span>      <span class="typ">DATE</span>         <span class="kw">DEFAULT</span> <span class="fn">CURRENT_DATE</span>(),
+    <span class="kw">CONSTRAINT</span> pk_mvo <span class="kw">PRIMARY KEY</span> (<span class="str">OBJECT_ID</span>)
+);
+
+<span class="cm">-- Metadata: column registry</span>
+<span class="kw">CREATE TABLE</span> META_VAULT_COLUMN (
+    <span class="str">COLUMN_ID</span>         <span class="typ">INT</span>          <span class="kw">NOT NULL</span> IDENTITY,
+    <span class="str">OBJECT_ID</span>         <span class="typ">INT</span>          <span class="kw">NOT NULL</span>,  <span class="cm">-- FK to META_VAULT_OBJECT</span>
+    <span class="str">COLUMN_NAME</span>       <span class="typ">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,
+    <span class="str">DATA_TYPE</span>         <span class="typ">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    <span class="str">IS_BUSINESS_KEY</span>   <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'N'</span>,
+    <span class="str">IS_HASH_DIFF</span>      <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'N'</span>,
+    <span class="str">IS_PAYLOAD</span>        <span class="typ">CHAR(1)</span>      <span class="kw">DEFAULT</span> <span class="str">'N'</span>,
+    <span class="str">HASH_DIFF_GROUP</span>   <span class="typ">VARCHAR(50)</span>,            <span class="cm">-- which HDIFF this column belongs to</span>
+    <span class="str">ORDINAL_POSITION</span>  <span class="typ">INT</span>,
+    <span class="kw">CONSTRAINT</span> pk_mvc <span class="kw">PRIMARY KEY</span> (<span class="str">COLUMN_ID</span>)
+);</pre>
+    </div>
+
+    <div class="detail">
+      <h3>From Metadata to Working Code</h3>
+      <p>
+        Once the registry is populated, a code generator iterates over the rows and emits DDL and ETL. The generator can be written in Python, Jinja2, or any scripting language. The principle is always the same: <strong>one template per vault type, fed with metadata rows, producing SQL output</strong>.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">Python &mdash; Hub DDL Generator (Pseudo-code)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm"># Pseudo-code: generate Hub DDL from metadata</span>
+<span class="kw">def</span> <span class="fn">generate_hub_ddl</span>(hub_name, business_key_col, bk_type=<span class="str">'VARCHAR(50)'</span>):
+    <span class="kw">return</span> <span class="fn">f</span><span class="str">"""
+CREATE TABLE {hub_name} (
+    {hub_name}_HK      CHAR(32)      NOT NULL,
+    {business_key_col} {bk_type}     NOT NULL,
+    LOAD_DATE          TIMESTAMP     NOT NULL,
+    RECORD_SOURCE      VARCHAR(100)  NOT NULL,
+    CONSTRAINT pk_{hub_name.lower()} PRIMARY KEY ({hub_name}_HK)
+);
+"""</span>
+
+<span class="cm"># Generate all hubs from metadata table</span>
+hubs = <span class="fn">query</span>(<span class="str">"SELECT OBJECT_NAME, BUSINESS_KEY FROM META_VAULT_OBJECT WHERE OBJECT_TYPE='HUB'"</span>)
+<span class="kw">for</span> hub <span class="kw">in</span> hubs:
+    <span class="fn">print</span>(<span class="fn">generate_hub_ddl</span>(hub.OBJECT_NAME, hub.BUSINESS_KEY))</pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Investment payback:</strong> A well-designed metadata layer pays back its investment in 2&ndash;3 sprints. After that, adding a new source system means adding rows to a config table and pressing &lsquo;generate&rsquo; &mdash; not writing 50 SQL files.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: dbt WITH DATA VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="dbt-datavault" id="dbt-datavault">
+    <p class="concept-num">Concept 02</p>
+    <h2>dbt with Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        <strong>dbt</strong> (data build tool) is a transformation framework that turns SQL SELECT statements into materialized tables. It's become the <em>industry-standard tool</em> for building Data Vault structures on cloud platforms. The key: dbt's macro system lets you write a Hub load template <strong>once</strong> and reuse it for every hub with a single line of configuration.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>How dbt Fits into a Data Vault Architecture</h3>
+      <p>
+        In a dbt-based Data Vault, each vault object becomes its own model file. The dependency chain is declared via <code>ref()</code> calls, and dbt ensures models always run in the correct order: staging first, then hubs and links in parallel, then satellites. No manual ETL orchestration required for the core load pattern.
+      </p>
+      <p>
+        The critical feature is <strong>incremental materialization</strong>. Instead of rebuilding a table from scratch every run, dbt appends only the new rows &mdash; which is exactly the insert-only pattern Data Vault requires. Combine this with a NOT IN or LEFT JOIN deduplication check and you have a complete vault loader in pure SQL.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">dbt SQL &mdash; models/staging/stg_crm_customer.sql</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- models/staging/stg_crm_customer.sql</span>
+<span class="kw">SELECT</span>
+    customer_id                                                  <span class="kw">AS</span> customer_bk,
+    {{ dbt_utils.generate_surrogate_key([<span class="str">'customer_id'</span>]) }}      <span class="kw">AS</span> <span class="hub">hub_customer_hk</span>,
+    {{ dbt_utils.generate_surrogate_key([
+        <span class="str">'first_name'</span>, <span class="str">'last_name'</span>, <span class="str">'email'</span>, <span class="str">'date_of_birth'</span>
+    ]) }}                                                        <span class="kw">AS</span> hash_diff_demographics,
+    first_name, last_name, email, date_of_birth,
+    country_code, phone_number,
+    <span class="fn">CURRENT_TIMESTAMP</span>()                                         <span class="kw">AS</span> load_date,
+    <span class="str">'CRM.SALESFORCE.CONTACT'</span>                                    <span class="kw">AS</span> record_source
+<span class="kw">FROM</span> {{ source(<span class="str">'crm'</span>, <span class="str">'contacts'</span>) }}
+<span class="kw">WHERE</span> customer_id <span class="kw">IS NOT NULL</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">dbt SQL &mdash; models/raw_vault/hub_customer.sql</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- models/raw_vault/hub_customer.sql</span>
+{{ config(materialized=<span class="str">'incremental'</span>, unique_key=<span class="str">'hub_customer_hk'</span>) }}
+
+<span class="kw">SELECT</span>
+    <span class="hub">hub_customer_hk</span>,
+    customer_bk,
+    load_date,
+    record_source
+<span class="kw">FROM</span> {{ ref(<span class="str">'stg_crm_customer'</span>) }}
+
+{% if is_incremental() %}
+<span class="kw">WHERE</span> <span class="hub">hub_customer_hk</span> <span class="kw">NOT IN</span> (<span class="kw">SELECT</span> <span class="hub">hub_customer_hk</span> <span class="kw">FROM</span> {{ this }})
+{% endif %}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">dbt SQL &mdash; models/raw_vault/sat_customer_demographics.sql</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- models/raw_vault/sat_customer_demographics.sql</span>
+{{ config(materialized=<span class="str">'incremental'</span>, unique_key=[<span class="str">'hub_customer_hk'</span>, <span class="str">'load_date'</span>]) }}
+
+<span class="kw">WITH</span> source <span class="kw">AS</span> (
+    <span class="kw">SELECT</span> * <span class="kw">FROM</span> {{ ref(<span class="str">'stg_crm_customer'</span>) }}
+),
+current_sat <span class="kw">AS</span> (
+    <span class="kw">SELECT</span> * <span class="kw">FROM</span> {{ this }}
+    <span class="kw">WHERE</span> load_end_date <span class="kw">IS NULL</span>
+)
+<span class="kw">SELECT</span>
+    s.<span class="hub">hub_customer_hk</span>,
+    s.load_date,
+    <span class="kw">NULL</span>                        <span class="kw">AS</span> load_end_date,
+    s.hash_diff_demographics    <span class="kw">AS</span> hash_diff,
+    s.record_source,
+    s.first_name, s.last_name, s.email, s.date_of_birth
+<span class="kw">FROM</span> source s
+<span class="kw">LEFT JOIN</span> current_sat c
+    <span class="kw">ON</span>  c.<span class="hub">hub_customer_hk</span> = s.<span class="hub">hub_customer_hk</span>
+<span class="kw">WHERE</span> c.<span class="hub">hub_customer_hk</span> <span class="kw">IS NULL</span>
+   <span class="kw">OR</span>  c.hash_diff != s.hash_diff_demographics</pre>
+    </div>
+
+    <div class="detail">
+      <h3>The datavault4dbt Package</h3>
+      <p>
+        The <strong>datavault4dbt</strong> community package (github.com/ScalefreeCOM/datavault4dbt) provides ready-made macros for Hub, Link, and Satellite loading. Instead of writing the SQL above manually for every vault object, you declare each object in a YAML config file and call a single macro: <code>datavault4dbt.hub()</code>, <code>datavault4dbt.link()</code>, or <code>datavault4dbt.sat()</code>. Each macro handles hash key generation, incremental change detection, and insert-only logic automatically.
+      </p>
+    </div>
+
+    <div class="tip">
+      <p><strong>dbt vs raw SQL for DV:</strong> For traditional Kimball, dbt models are one-to-one with star schema objects. For Data Vault, each model maps to a vault object, and the <code>ref()</code> system enforces the staging &rarr; hub/link &rarr; satellite dependency order automatically. Hash key computation via <code>dbt_utils.generate_surrogate_key</code> ensures consistent input normalization across all sources &mdash; something manual MD5 calls frequently get wrong.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: AUTOMATION TOOLS
+       ============================================================ -->
+  <article class="concept" data-topic="automation-tools" id="automation-tools">
+    <p class="concept-num">Concept 03</p>
+    <h2>WhereScape RED &amp; Automation Tools</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        <strong>WhereScape RED</strong> is an enterprise automation tool specifically designed for Data Vault. You describe your source tables and target vault structures, and WhereScape generates the DDL, ETL code, scheduling, and documentation. It's used by large banks and insurers that need to deliver vault structures at scale <em>without</em> a big dbt engineering team.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Enterprise Automation Landscape</h3>
+      <p>
+        Multiple tools exist for Data Vault automation, ranging from fully open-source SQL template libraries to commercial GUI-driven code generators. Choosing the right tool depends on your team's skills, cloud platform, governance requirements, and budget.
+      </p>
+      <ul>
+        <li><strong>WhereScape RED</strong> &mdash; GUI-based DV automation, strong in financial services. Generates native SQL for Snowflake, SQL Server, and Oracle. Metadata-driven DDL + ETL generation with built-in scheduler and documentation. Best for regulated enterprises needing a fully supported commercial product with an audit trail of generated code.</li>
+        <li><strong>dbt + datavault4dbt</strong> &mdash; Open-source, SQL-native, highly customizable. Best for cloud-native engineering teams comfortable with version-controlled SQL and YAML config. Excellent community support and integrates naturally with modern data stack tooling (Airflow, Prefect, GitHub Actions).</li>
+        <li><strong>Roelant Vos's DV Framework</strong> &mdash; Free SQL template library for SQL Server, available on GitHub. An excellent starting point for teams building their own metadata-driven automation and not yet ready to adopt dbt or a commercial tool.</li>
+        <li><strong>WhereScape 3D</strong> &mdash; Visual modeling tool that generates DV structures from entity-relationship diagrams. Complements WhereScape RED in design-first workflows where an architect draws the model before any SQL is written.</li>
+        <li><strong>TimeXtender</strong> &mdash; Low-code DV automation with built-in governance features. Strong in Microsoft Azure and Fabric ecosystems. Suited to business analyst-led teams that prefer point-and-click over writing SQL.</li>
+      </ul>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tool</th>
+          <th>Best For</th>
+          <th>Cloud Support</th>
+          <th>Open Source?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>dbt + datavault4dbt</strong></td>
+          <td>Engineering-led cloud teams</td>
+          <td style="color:var(--green)">Snowflake, BigQuery, Databricks</td>
+          <td style="color:var(--green)">&#10003; Yes</td>
+        </tr>
+        <tr>
+          <td><strong>WhereScape RED</strong></td>
+          <td>Enterprise, heavily regulated, GUI-preferred</td>
+          <td style="color:var(--teal)">All major platforms</td>
+          <td style="color:var(--coral)">&#10007; No</td>
+        </tr>
+        <tr>
+          <td><strong>Roelant Vos Framework</strong></td>
+          <td>SQL Server shops, learning / POC</td>
+          <td style="color:var(--amber)">Limited</td>
+          <td style="color:var(--green)">&#10003; Yes</td>
+        </tr>
+        <tr>
+          <td><strong>TimeXtender</strong></td>
+          <td>Low-code / business analyst-led</td>
+          <td style="color:var(--teal)">Azure / Microsoft Fabric</td>
+          <td style="color:var(--coral)">&#10007; No</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p><strong>Tool lock-in is real:</strong> Commercial tools bind you to their metadata schema and ETL generation approach. Before committing, verify the tool generates code you can inspect, debug, and override. Black-box generation you cannot examine is a liability in regulated environments where you must explain every transformation to an auditor.</p>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: AUTO-GENERATING DDL & ETL
+       ============================================================ -->
+  <article class="concept" data-topic="codegen" id="codegen">
+    <p class="concept-num">Concept 04</p>
+    <h2>Auto-Generating DDL &amp; ETL</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        Whether you use dbt macros, Python scripts, or a commercial tool, the principle is the same: <strong>define the structure once in a template, feed it metadata, get working SQL out</strong>. This section shows what a complete self-built automation looks like using <em>Jinja2 templates</em> &mdash; the same engine that powers dbt itself.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Jinja2 Template-Based Code Generation</h3>
+      <p>
+        <strong>Jinja2</strong> is a Python templating language that embeds variables, loops, and conditionals inside text files (including SQL). dbt uses Jinja2 internally. You can use it directly to build your own code generator without adopting the full dbt ecosystem &mdash; useful for platforms dbt doesn't support, or for generating non-SQL artefacts like documentation and test scripts.
+      </p>
+      <p>
+        A Jinja2 Hub DDL template is essentially a Hub <code>CREATE TABLE</code> statement with variables like <code>{{ entity_name }}</code> substituted at generation time. The same file generates every hub in your vault; only the variable values change per object.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">Jinja2 &mdash; hub_template.sql.j2</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- hub_template.sql.j2</span>
+<span class="cm">-- Generated: {{ generation_timestamp }}</span>
+<span class="cm">-- Source:    {{ source_system }}</span>
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> {{ schema }}.<span class="hub">HUB_{{ entity_name | upper }}</span> (
+    <span class="hub">HUB_{{ entity_name | upper }}_HK</span>  <span class="typ">CHAR(32)</span>       <span class="kw">NOT NULL</span>
+        COMMENT <span class="str">'MD5 hash of {{ bk_column }}'</span>,
+    {{ bk_column | upper }}            {{ bk_type }}   <span class="kw">NOT NULL</span>
+        COMMENT <span class="str">'Business key from {{ source_system }}'</span>,
+    <span class="str">LOAD_DATE</span>                          <span class="typ">TIMESTAMP_NTZ</span>  <span class="kw">NOT NULL</span>
+        COMMENT <span class="str">'Batch load timestamp'</span>,
+    <span class="str">RECORD_SOURCE</span>                      <span class="typ">VARCHAR(200)</span>   <span class="kw">NOT NULL</span>
+        COMMENT <span class="str">'Source: {{ source_system }}'</span>,
+    <span class="kw">CONSTRAINT</span> pk_hub_{{ entity_name | lower }}
+        <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_{{ entity_name | upper }}_HK</span>)
+)
+COMMENT = <span class="str">'Hub table for {{ entity_name }} entity. Insert-only.'</span>;
+
+<span class="cm">-- Index for business key lookups</span>
+<span class="kw">CREATE INDEX IF NOT EXISTS</span> idx_hub_{{ entity_name | lower }}_bk
+    <span class="kw">ON</span> {{ schema }}.<span class="hub">HUB_{{ entity_name | upper }}</span> ({{ bk_column | upper }});</pre>
+    </div>
+
+    <div class="detail">
+      <h3>Satellite ETL Template</h3>
+      <p>
+        The Satellite load template is more complex because it must iterate over a variable-length payload column list. Jinja2 <code>{% for %}</code> loops handle this elegantly &mdash; the template generates the correct column list regardless of how many payload columns the satellite has, driven entirely by what is in the metadata registry.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">Jinja2 &mdash; sat_load_template.sql.j2</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- sat_load_template.sql.j2</span>
+<span class="kw">INSERT INTO</span> {{ schema }}.{{ sat_name }} (
+    {{ parent_hk_col }},
+    <span class="str">LOAD_DATE</span>, <span class="str">LOAD_END_DATE</span>, <span class="str">HASH_DIFF</span>, <span class="str">RECORD_SOURCE</span>,
+    {% for col in payload_columns %}{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+
+)
+<span class="kw">SELECT</span>
+    stg.{{ parent_hk_col }},
+    stg.<span class="str">LOAD_DATE</span>, <span class="kw">NULL</span>, stg.HASH_DIFF_{{ context }}, stg.<span class="str">RECORD_SOURCE</span>,
+    {% for col in payload_columns %}stg.{{ col.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+
+<span class="kw">FROM</span> {{ staging_table }} stg
+<span class="kw">LEFT JOIN</span> {{ schema }}.{{ sat_name }} sat
+    <span class="kw">ON</span>  sat.{{ parent_hk_col }} = stg.{{ parent_hk_col }}
+   <span class="kw">AND</span> sat.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+<span class="kw">WHERE</span> sat.{{ parent_hk_col }} <span class="kw">IS NULL</span>
+   <span class="kw">OR</span>  sat.<span class="str">HASH_DIFF</span> != stg.HASH_DIFF_{{ context }};</pre>
+    </div>
+
+    <div class="bpm-grid">
+      <div class="bp-box">
+        <h4>&#10003; Code Generation Best Practices</h4>
+        <ul>
+          <li>Version-control templates alongside metadata config</li>
+          <li>Generate into a review folder before running in prod</li>
+          <li>Include generation timestamp and source in file headers</li>
+          <li>Write one generator unit test per vault type</li>
+          <li>Validate generated DDL against a golden output in CI</li>
+        </ul>
+      </div>
+      <div class="mistake-box">
+        <h4>&#10007; Common Mistakes</h4>
+        <ul>
+          <li>Generating directly into production without review</li>
+          <li>Hand-editing generated files (overwritten next run)</li>
+          <li>No generation metadata in file headers</li>
+          <li>Building a "perfect generic" framework before basics work</li>
+          <li>Forgetting to regenerate tests when adding columns</li>
+        </ul>
+      </div>
+    </div>
+
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: DATA CONTRACTS & INTERVIEW Q&A
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 05</p>
+    <h2>Data Contracts &amp; Interview Q&amp;A</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I'm Five</p>
+      <p>
+        A <strong>data contract</strong> is a formal agreement between a source system team and the data vault team specifying exactly what data will be delivered, in what format, at what frequency, and what SLAs apply. Without contracts, source systems change schemas without warning and break vault loads.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Why Data Contracts Are Critical for Data Vault</h3>
+      <p>
+        The business key is the foundation of every Hub. The HashDiff drives change detection in every Satellite. Both are critically sensitive to source schema changes. A column rename, a type change, or a new column silently added to the payload <strong>breaks downstream loads</strong> without any visible error until the next batch run &mdash; sometimes hours later.
+      </p>
+      <p>
+        A data contract makes these implicit assumptions <em>explicit</em> and binds the source team to a change management process. It transforms schema drift from an operational crisis into a managed event with defined notice periods and approval gates. For automated, metadata-driven vaults especially, a formal contract protects the entire code-generation pipeline from unannounced upstream changes.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">YAML &mdash; data_contract_crm_customers.yaml</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm"># data_contract_crm_customers.yaml</span>
+<span class="str">contract</span>:
+  <span class="str">name</span>:          <span class="fn">"CRM Customer Daily Extract"</span>
+  <span class="str">version</span>:       <span class="fn">"2.1.0"</span>
+  <span class="str">source_system</span>: <span class="fn">"Salesforce CRM"</span>
+  <span class="str">owner</span>:         <span class="fn">"CRM Engineering Team"</span>
+  <span class="str">consumer</span>:      <span class="fn">"Data Vault Raw Vault"</span>
+
+<span class="str">delivery</span>:
+  <span class="str">schedule</span>:      <span class="fn">"Daily at 02:00 UTC"</span>
+  <span class="str">format</span>:        <span class="fn">"Parquet"</span>
+  <span class="str">landing_zone</span>:  <span class="fn">"s3://data-lake/raw/crm/customers/"</span>
+
+<span class="str">schema</span>:
+  <span class="str">business_key</span>:
+    <span class="str">column</span>:       <span class="fn">customer_id</span>
+    <span class="str">type</span>:         <span class="fn">STRING</span>
+    <span class="str">nullable</span>:     <span class="fn">false</span>
+    <span class="str">description</span>:  <span class="fn">"Salesforce Account ID (18-char)"</span>
+  <span class="str">payload_columns</span>:
+    - {<span class="str">name</span>: first_name,   <span class="str">type</span>: STRING, <span class="str">nullable</span>: <span class="fn">true</span>}
+    - {<span class="str">name</span>: last_name,    <span class="str">type</span>: STRING, <span class="str">nullable</span>: <span class="fn">true</span>}
+    - {<span class="str">name</span>: email,        <span class="str">type</span>: STRING, <span class="str">nullable</span>: <span class="fn">true</span>}
+    - {<span class="str">name</span>: country_code, <span class="str">type</span>: STRING, <span class="str">nullable</span>: <span class="fn">true</span>, <span class="str">max_length</span>: <span class="num">3</span>}
+
+<span class="str">sla</span>:
+  <span class="str">availability</span>:       <span class="fn">"99.5%"</span>
+  <span class="str">max_delay_minutes</span>:  <span class="num">30</span>
+  <span class="str">null_bk_threshold</span>:  <span class="fn">"0%"</span>  <span class="cm"># no null business keys allowed</span>
+
+<span class="str">change_management</span>:
+  <span class="str">notice_required_days</span>:     <span class="num">14</span>
+  <span class="str">breaking_change_approval</span>: <span class="fn">"Data Architecture Team"</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128221;</span>
+      <p><strong>Key elements of a DV data contract:</strong> the business key columns with exact types and NOT NULL guarantees, payload columns with types and nullable rules, delivery schedule and format, SLA metrics (availability and maximum delay), and a formal change management process with 14+ day notice periods and approval gates for breaking changes.</p>
+    </div>
+
+    <p class="interview-section-label">Architect-Level Interview Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is metadata-driven development in the context of Data Vault and what are its benefits?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Metadata-driven development means storing the <strong>description</strong> of your vault structures (entity names, business keys, column lists, source systems) in configuration tables rather than hard-coding them in SQL files. A code generator reads the metadata and produces DDL and ETL code.</p>
+          <p>Benefits: (1) <strong>Consistency</strong> &mdash; every Hub/Link/Sat follows exactly the same pattern with no manual deviation; (2) <strong>Speed</strong> &mdash; adding a new source system means adding config rows, not writing 50 files; (3) <strong>Self-documentation</strong> &mdash; the metadata IS the data dictionary; (4) <strong>Change management</strong> &mdash; regenerate everything when a naming convention changes; (5) <strong>Testing</strong> &mdash; metadata can drive automated test generation alongside the DDL itself.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does dbt support Data Vault patterns and what's different about using it for DV vs traditional dimensional modeling?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>For traditional Kimball, dbt models map one-to-one with star schema objects (one model per dimension or fact). For Data Vault, dbt models map to vault objects &mdash; staging models, hub models, link models, satellite models &mdash; and the workflow differences are significant:</p>
+          <p>(1) <strong>Incremental materialization with NOT EXISTS / LEFT JOIN logic</strong> replaces full rebuilds, enforcing the DV insert-only pattern; (2) <strong>Macros</strong> via datavault4dbt or custom packages generate standard DV patterns from YAML config, avoiding repeated SQL; (3) <strong>Hash key computation</strong> via <code>dbt_utils.generate_surrogate_key</code> rather than raw MD5 calls ensures consistent input normalization across all source feeds; (4) <strong>Model dependencies</strong> via <code>ref()</code> enforce load order (staging &rarr; hub/link &rarr; satellite &rarr; PIT/bridge) automatically.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a data contract and why is it important for a Data Vault implementation?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>A data contract is a formal schema agreement between a source system team and the data vault team. It specifies: the business key column(s) and their types, payload columns with types and nullable rules, delivery schedule, format, SLA, and change management process.</p>
+          <p>Importance for DV: (1) The <strong>business key is the foundation of every Hub</strong> &mdash; if the source silently renames the BK column, every vault load breaks; (2) <strong>Adding columns to the source is a breaking change for HashDiff computation</strong> &mdash; the satellite's hash changes even if the actual data values are identical; (3) The <strong>change management process</strong> ensures the vault team has notice (typically 14+ days) to update staging transforms before breaking changes arrive. Data contracts make the implicit explicit and turn schema drift from a crisis into a managed, predictable event.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How would you approach building a metadata-driven framework for a team starting from scratch?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Start small, prove the pattern, then expand. Resist the temptation to build a perfect generic framework upfront &mdash; a working generator for your 3 most common patterns is worth more than a theoretically perfect system that takes 6 months to build.</p>
+          <p><strong>Step 1:</strong> Build the metadata tables (vault object registry + column registry). <strong>Step 2:</strong> Write one generator per vault type (Hub, Link, Sat) using Jinja2 templates or Python string templates. <strong>Step 3:</strong> Generate DDL for 3&ndash;4 vault objects from config and validate they match hand-written versions exactly. <strong>Step 4:</strong> Generate ETL (staging + vault load SQL) and run it against real source data. <strong>Step 5:</strong> Add generated test SQL (NOT NULL checks, referential integrity, HashDiff coverage). Build for the patterns you actually use, then generalize from there. A working generator deployed is worth far more than a perfectly designed generator still in development.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 10 Key Takeaways</h3>
+      <ul>
+        <li>Metadata-driven development stores vault structure descriptions in config tables and code-generates DDL and ETL &mdash; adding a new source system means adding config rows and pressing &lsquo;generate&rsquo;, not writing 50 SQL files by hand.</li>
+        <li>dbt's incremental materialization and macro system &mdash; especially the datavault4dbt package &mdash; make it the industry standard for cloud Data Vault. Staging models, hub/link/sat loads, and dependency ordering all flow from SQL and YAML config.</li>
+        <li>Commercial tools like WhereScape RED and TimeXtender suit enterprise environments that prefer GUI-driven automation with commercial support; dbt + datavault4dbt suits engineering-led cloud teams that want open-source flexibility and version-controlled code.</li>
+        <li>Jinja2 templates are the simplest path to building your own metadata-driven code generator &mdash; define one template per vault type, feed it metadata rows, and get working SQL out for every vault object automatically.</li>
+        <li>Data contracts formalize the agreement between source systems and the vault team, specifying business keys, delivery schedules, SLAs, and change management &mdash; turning schema drift from an operational crisis into a managed, predictable event.</li>
+      </ul>
+    </div>
+
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module09.html">&larr; Module 09: Advanced Patterns</a>
+  <a href="module11.html" class="next">Module 11: Cloud &amp; Streaming &rarr;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 10 of 14 &mdash; Automation &amp; Metadata
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('10', 5);</script>
+</body>
+</html>

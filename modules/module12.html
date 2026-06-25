@@ -1,0 +1,587 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="DV to Dimensional Modeling — Information Mart architecture, DV to Star Schema, SCD Type 1/2/3/6 from Data Vault, Data Product design, and architect-level interview prep.">
+<title>Module 12: DV to Dimensional Modeling | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html">Cloud</a>
+    <a href="module12.html" class="active">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">12</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--purple);border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.08)">
+      Architect &nbsp;&middot;&nbsp; Module 12 of 14
+    </span>
+    <h1>DV to Dimensional<br><em style="color:var(--purple)">Modeling</em></h1>
+    <p class="mod-hero-desc">
+      Data Vault is your integration and history layer &mdash; not your reporting layer. Business users need Star Schemas, wide tables, and SCDs. This module covers how to build Information Marts from the vault correctly, efficiently, and without duplicating logic across reports.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~60 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Architect</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;07</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: INFORMATION MART ARCHITECTURE
+       ============================================================ -->
+  <article class="concept" data-topic="information-mart" id="information-mart">
+    <p class="concept-num">Concept 01</p>
+    <h2>Information Mart Architecture</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Data Vault stores everything with maximum flexibility and history. But business analysts don&rsquo;t want to write 8-table joins to get a customer&rsquo;s current name. Information Marts are <strong>pre-computed, flattened, business-friendly views</strong> built from the vault. They answer specific business questions in a form that BI tools, analysts, and ML models can consume directly &mdash; without needing to understand vault structure.
+      </p>
+    </div>
+
+    <div class="analogy">
+      <p class="analogy-label">&#128218; Analogy</p>
+      <p>
+        The Raw Vault is a library with every book ever printed, catalogued precisely. The Business Vault is the reference desk that helps you find related books. The Information Mart is the <strong>curated reading list for a specific subject</strong> &mdash; a selection already assembled and ordered for a particular audience. The library still exists; the reading list just makes it accessible to people who don&rsquo;t know the cataloguing system.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Three Types of Information Mart Output</h3>
+      <ul>
+        <li><strong>Star Schema.</strong> A central fact table surrounded by dimension tables. The classic BI reporting structure. Built from vault Links (facts) and Hub+Satellite combinations (dimensions). Optimised for OLAP queries with GROUP BY and aggregations.</li>
+        <li><strong>Wide / flat table (One Big Table).</strong> A denormalised table with all dimension attributes pre-joined onto each fact row. Zero joins needed at query time. Common for ML feature stores and self-service analytics where users write ad-hoc SQL.</li>
+        <li><strong>Data Product.</strong> A business-domain-scoped, versioned, SLA-backed dataset. Exposed via a well-defined interface (API, Snowflake share, BigQuery authorised view). Built on top of vault data but treated as an independent product with its own schema contract.</li>
+      </ul>
+    </div>
+
+    <!-- SVG: DV to Mart pipeline -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Data Vault to Information Mart pipeline: Raw Vault plus Business Vault feeds mart layer">
+        <!-- Raw Vault -->
+        <rect x="10" y="50" width="140" height="110" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.4)" stroke-width="1.8"/>
+        <text x="80" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.55)" letter-spacing="1">RAW VAULT</text>
+        <text x="80" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#a78bfa">HUB / LINK / SAT</text>
+        <text x="80" y="100" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">Insert-only</text>
+        <text x="80" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">No business rules</text>
+        <text x="80" y="136" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.5)">Full history</text>
+
+        <!-- Business Vault -->
+        <rect x="10" y="170" width="140" height="30" rx="6" fill="rgba(134,239,172,0.06)" stroke="rgba(134,239,172,0.3)" stroke-width="1.2"/>
+        <text x="80" y="190" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.7)">PIT / Bridge / Computed</text>
+
+        <!-- Arrows -->
+        <line x1="152" y1="105" x2="205" y2="75" stroke="rgba(232,184,75,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <line x1="152" y1="105" x2="205" y2="130" stroke="rgba(232,184,75,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <line x1="152" y1="185" x2="205" y2="130" stroke="rgba(134,239,172,0.4)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="203,70 216,75 203,80" fill="rgba(232,184,75,0.5)"/>
+        <polygon points="203,125 216,130 203,135" fill="rgba(232,184,75,0.5)"/>
+
+        <!-- Mart Types -->
+        <rect x="217" y="40" width="160" height="70" rx="8" fill="rgba(34,211,200,0.07)" stroke="rgba(34,211,200,0.35)" stroke-width="1.5"/>
+        <text x="297" y="62" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#22d3c8">Star Schema</text>
+        <text x="297" y="82" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">FACT_SALES + DIM_CUSTOMER</text>
+        <text x="297" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)">BI / reporting optimised</text>
+
+        <rect x="217" y="120" width="160" height="70" rx="8" fill="rgba(232,184,75,0.07)" stroke="rgba(232,184,75,0.35)" stroke-width="1.5"/>
+        <text x="297" y="142" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#e8b84b">Wide Table</text>
+        <text x="297" y="162" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.5)">All attrs pre-joined</text>
+        <text x="297" y="180" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.5)">ML feature store / OBT</text>
+
+        <!-- Arrow to consumers -->
+        <line x1="379" y1="75" x2="430" y2="95" stroke="rgba(238,242,255,0.3)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <line x1="379" y1="155" x2="430" y2="130" stroke="rgba(238,242,255,0.3)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <polygon points="428,90 441,95 428,100" fill="rgba(238,242,255,0.3)"/>
+        <polygon points="428,125 441,130 428,135" fill="rgba(238,242,255,0.3)"/>
+
+        <!-- Consumers -->
+        <rect x="442" y="50" width="270" height="120" rx="8" fill="rgba(238,242,255,0.03)" stroke="rgba(238,242,255,0.15)" stroke-width="1.2"/>
+        <text x="577" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.35)" letter-spacing="1">CONSUMERS</text>
+        <text x="577" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(238,242,255,0.6)">Power BI / Tableau / Looker</text>
+        <text x="577" y="100" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(238,242,255,0.6)">Jupyter / ML pipelines</text>
+        <text x="577" y="120" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(238,242,255,0.6)">REST API / Data Mesh</text>
+        <text x="577" y="140" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(238,242,255,0.6)">dbt semantic layer</text>
+        <text x="577" y="160" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(238,242,255,0.6)">Operational apps</text>
+      </svg>
+    </div>
+
+    <div class="tip">
+      <p><strong>Key principle:</strong> Information Marts should never read directly from the Raw Vault. They always read through the Business Vault (PIT tables, Bridge tables). The PIT table pre-computes the LOAD_DATE pointer for each satellite at each snapshot date, making mart queries simple, fast, and predictable regardless of how complex the underlying vault history is.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: DV TO STAR SCHEMA
+       ============================================================ -->
+  <article class="concept" data-topic="star-schema" id="star-schema">
+    <p class="concept-num">Concept 02</p>
+    <h2>DV to Star Schema</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A Star Schema has two types of table: a <strong>Fact table</strong> (what happened: sales, clicks, shipments &mdash; with measures like amount and quantity) and <strong>Dimension tables</strong> (who/what/where/when was involved: customers, products, dates). In Data Vault, the <strong>Link table maps to a Fact</strong>, and <strong>Hub + Satellites map to a Dimension</strong>. The mart just flattens and joins them.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Mapping Pattern</h3>
+      <ul>
+        <li><strong>LINK_ORDER_PRODUCT &rarr; FACT_SALES.</strong> The Link records the relationship (which order contained which product). A Satellite on the Link (<code>SAT_L_ORDER_PRODUCT_DETAILS</code>) holds the measures &mdash; quantity, unit price, discount. Together they give you one fact row per order-product line.</li>
+        <li><strong>HUB_CUSTOMER + SAT_CUSTOMER_* &rarr; DIM_CUSTOMER.</strong> Join the Hub to its Satellites (via PIT table) to get the current or as-of attribute values. Assign a surrogate dimension key (integer) for BI tool compatibility.</li>
+        <li><strong>Date dimension.</strong> Data Vault does not model time as a Hub &mdash; dates are denormalised as foreign keys in Link Satellites. Build a separate DIM_DATE calendar table in the mart layer.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; DIM_CUSTOMER built from Hub + PIT + Satellites</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- DIM_CUSTOMER: built for a specific snapshot date via PIT table</span>
+<span class="cm">-- The PIT table pre-resolves which SAT LOAD_DATE to use for each entity</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> MART.DIM_CUSTOMER <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="cm">-- Surrogate key for BI tools (they don't like CHAR(32) as FK)</span>
+    <span class="fn">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> h.<span class="hub">HUB_CUSTOMER_HK</span>)  <span class="kw">AS</span> CUSTOMER_DIM_SK,
+    h.CUSTOMER_BK                                       <span class="kw">AS</span> CUSTOMER_BK,
+    h.<span class="hub">HUB_CUSTOMER_HK</span>                                   <span class="kw">AS</span> CUSTOMER_HK,
+
+    <span class="cm">-- Demographic attributes (from SAT via PIT LOAD_DATE pointer)</span>
+    demo.FIRST_NAME,
+    demo.LAST_NAME,
+    demo.DATE_OF_BIRTH,
+    demo.COUNTRY_CODE,
+
+    <span class="cm">-- Contact attributes</span>
+    cont.EMAIL,
+    cont.PHONE,
+
+    <span class="cm">-- Financial attributes</span>
+    fin.CREDIT_LIMIT,
+    fin.RISK_SCORE
+
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span>           h
+
+<span class="cm">-- PIT table tells us which LOAD_DATE to join for each satellite</span>
+<span class="kw">JOIN</span> BIZ_VAULT.PIT_CUSTOMER  pit
+    <span class="kw">ON</span>  pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> pit.SNAPSHOT_DATE <span class="op">=</span> <span class="fn">CURRENT_DATE</span>()   <span class="cm">-- or pass a specific date</span>
+
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> demo
+    <span class="kw">ON</span>  demo.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> demo.<span class="str">LOAD_DATE</span>       <span class="op">=</span> pit.SAT_DEMOGRAPHICS_LD  <span class="cm">-- exact PIT pointer</span>
+
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span> cont
+    <span class="kw">ON</span>  cont.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> cont.<span class="str">LOAD_DATE</span>       <span class="op">=</span> pit.SAT_CONTACT_LD
+
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span> fin
+    <span class="kw">ON</span>  fin.<span class="hub">HUB_CUSTOMER_HK</span>  <span class="op">=</span> pit.<span class="hub">HUB_CUSTOMER_HK</span>
+    <span class="kw">AND</span> fin.<span class="str">LOAD_DATE</span>        <span class="op">=</span> pit.SAT_FINANCIALS_LD;</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; FACT_SALES built from Link + Link Satellite</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- FACT_SALES: Link provides entity relationships; Link SAT provides measures</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> MART.FACT_SALES <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="cm">-- Dimension surrogate keys (looked up from DIM tables)</span>
+    dc.CUSTOMER_DIM_SK,
+    dp.PRODUCT_DIM_SK,
+    dd.DATE_DIM_SK,
+
+    <span class="cm">-- Degenerate dimensions (no matching dim table needed)</span>
+    lnk.<span class="hub">HUB_ORDER_HK</span>          <span class="kw">AS</span> ORDER_HK,
+
+    <span class="cm">-- Measures from Link Satellite</span>
+    ls.QUANTITY_ORDERED,
+    ls.UNIT_PRICE,
+    ls.DISCOUNT_AMOUNT,
+    ls.QUANTITY_ORDERED <span class="op">*</span> ls.UNIT_PRICE <span class="op">-</span> ls.DISCOUNT_AMOUNT <span class="kw">AS</span> NET_SALES_AMOUNT
+
+<span class="kw">FROM</span>  <span class="lnk">LINK_ORDER_CUSTOMER_PRODUCT</span>    lnk
+<span class="kw">JOIN</span>  <span class="sat">SAT_L_ORDER_CUSTOMER_PRODUCT_DETAILS</span>  ls
+    <span class="kw">ON</span>  ls.<span class="lnk">LINK_ORDER_CUSTOMER_PRODUCT_HK</span> <span class="op">=</span> lnk.<span class="lnk">LINK_ORDER_CUSTOMER_PRODUCT_HK</span>
+    <span class="kw">AND</span> ls.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>   <span class="cm">-- current satellite record for this link</span>
+<span class="kw">JOIN</span>  MART.DIM_CUSTOMER  dc  <span class="kw">ON</span>  dc.CUSTOMER_HK <span class="op">=</span> lnk.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">JOIN</span>  MART.DIM_PRODUCT   dp  <span class="kw">ON</span>  dp.PRODUCT_HK  <span class="op">=</span> lnk.<span class="hub">HUB_PRODUCT_HK</span>
+<span class="kw">JOIN</span>  MART.DIM_DATE      dd  <span class="kw">ON</span>  dd.DATE_VALUE  <span class="op">=</span> ls.ORDER_DATE;</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: DV TO WIDE / FLAT TABLES
+       ============================================================ -->
+  <article class="concept" data-topic="wide-tables" id="wide-tables">
+    <p class="concept-num">Concept 03</p>
+    <h2>DV to Wide / Flat Tables</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A wide table (One Big Table / OBT) pre-joins <strong>everything a specific team needs into one giant row</strong>. Instead of a data analyst writing 8-table JOINs to answer a question about a customer&rsquo;s purchase history, they just query one table and filter. Wide tables are faster for analysts, easier for ML models, and simpler for self-service. The trade-off is storage cost and refresh latency.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>When to Use Wide Tables</h3>
+      <ul>
+        <li>ML feature store: each row = one entity (customer, product) with all features pre-computed and pre-joined. No joins at training time &mdash; maximises throughput for large model training runs.</li>
+        <li>Self-service analytics: business users who write SQL but don&rsquo;t understand the vault structure. One table per business domain (customer, order, product) that they can freely filter and aggregate.</li>
+        <li>Operational dashboards: dashboards that run 100+ queries per minute benefit from a materialised wide table over a complex mart view that re-joins the vault on every render.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Wide Customer Table (One Big Table pattern)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Wide Customer OBT: current snapshot of all customer attributes from all satellites</span>
+<span class="cm">-- Materialised daily; partitioned by COUNTRY_CODE for regional team access control</span>
+<span class="kw">CREATE OR REPLACE TABLE</span> MART.WIDE_CUSTOMER
+PARTITION BY COUNTRY_CODE <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="cm">-- Identity</span>
+    h.CUSTOMER_BK,
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+
+    <span class="cm">-- Demographics (from PIT-resolved LOAD_DATE)</span>
+    demo.FIRST_NAME, demo.LAST_NAME,
+    demo.DATE_OF_BIRTH,
+    <span class="fn">DATEDIFF</span>(<span class="str">'year'</span>, demo.DATE_OF_BIRTH, <span class="fn">CURRENT_DATE</span>()) <span class="kw">AS</span> AGE,
+    demo.COUNTRY_CODE, demo.GENDER_CODE,
+
+    <span class="cm">-- Contact</span>
+    cont.EMAIL, cont.PHONE,
+
+    <span class="cm">-- Financials</span>
+    fin.CREDIT_LIMIT, fin.RISK_SCORE, fin.PAYMENT_TERMS,
+
+    <span class="cm">-- Loyalty</span>
+    loy.LOYALTY_TIER, loy.POINTS_BALANCE,
+
+    <span class="cm">-- Computed (Business Vault derived attributes)</span>
+    bv.LIFETIME_ORDER_COUNT,
+    bv.LIFETIME_NET_SPEND,
+    bv.DAYS_SINCE_LAST_ORDER,
+
+    <span class="fn">CURRENT_TIMESTAMP</span>() <span class="kw">AS</span> SNAPSHOT_TS
+
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span>            h
+<span class="kw">JOIN</span> BIZ_VAULT.PIT_CUSTOMER   pit <span class="kw">ON</span> pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+                                   <span class="kw">AND</span> pit.SNAPSHOT_DATE <span class="op">=</span> <span class="fn">CURRENT_DATE</span>()
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>  demo <span class="kw">ON</span> demo.<span class="hub">HUB_CUSTOMER_HK</span><span class="op">=</span>pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="kw">AND</span> demo.<span class="str">LOAD_DATE</span><span class="op">=</span>pit.SAT_DEMOGRAPHICS_LD
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span>       cont <span class="kw">ON</span> cont.<span class="hub">HUB_CUSTOMER_HK</span><span class="op">=</span>pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="kw">AND</span> cont.<span class="str">LOAD_DATE</span><span class="op">=</span>pit.SAT_CONTACT_LD
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_FINANCIALS</span>    fin  <span class="kw">ON</span> fin.<span class="hub">HUB_CUSTOMER_HK</span><span class="op">=</span>pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="kw">AND</span> fin.<span class="str">LOAD_DATE</span><span class="op">=</span>pit.SAT_FINANCIALS_LD
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_LOYALTY</span>       loy  <span class="kw">ON</span> loy.<span class="hub">HUB_CUSTOMER_HK</span><span class="op">=</span>pit.<span class="hub">HUB_CUSTOMER_HK</span> <span class="kw">AND</span> loy.<span class="str">LOAD_DATE</span><span class="op">=</span>pit.SAT_LOYALTY_LD
+<span class="kw">LEFT JOIN</span> BIZ_VAULT.COMPUTED_SAT_CUSTOMER  bv <span class="kw">ON</span> bv.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>;</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: SCD TYPE 1/2/3/6 FROM DATA VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="scd-from-dv" id="scd-from-dv">
+    <p class="concept-num">Concept 04</p>
+    <h2>SCD Type 1/2/3/6 from Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Traditional dimensional modeling needs you to decide <em>upfront</em> whether a customer dimension is Type 1 (overwrite history), Type 2 (keep all versions), Type 3 (keep current and previous only), or Type 6 (hybrid). Data Vault records <strong>all historical versions in the Satellite</strong> so you can produce <em>any</em> SCD type from the same source data &mdash; you decide the SCD type in the mart, not in the vault.
+      </p>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>SCD Type</th>
+          <th>Behaviour</th>
+          <th>How to Build from DV Satellite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Type 1</strong></td>
+          <td>Overwrite: always show current value only</td>
+          <td>Query satellite with <code>LOAD_END_DATE IS NULL</code> (or PIT LOAD_DATE). No history in the mart.</td>
+        </tr>
+        <tr>
+          <td><strong>Type 2</strong></td>
+          <td>Track all history as separate rows with effective dates</td>
+          <td>Project all satellite rows, converting LOAD_DATE &rarr; EFF_FROM and LOAD_END_DATE &rarr; EFF_TO. Each satellite row becomes one SCD2 row.</td>
+        </tr>
+        <tr>
+          <td><strong>Type 3</strong></td>
+          <td>Keep current and previous value only; two columns</td>
+          <td>Use LAG(attribute, 1) OVER (PARTITION BY HK ORDER BY LOAD_DATE) to project current and one prior value into <code>COL_CURRENT</code> and <code>COL_PREVIOUS</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Type 6</strong></td>
+          <td>Type 2 rows PLUS a Type 1 current-value column on every row</td>
+          <td>Build SCD2 rows from satellite, then add a JOIN or window function to stamp the current value onto every historical row.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; SCD Type 2 Dimension from Satellite History</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- SCD Type 2 dimension from satellite history</span>
+<span class="cm">-- Each satellite row = one SCD2 row with effective date range</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> MART.DIM_CUSTOMER_SCD2 <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+    <span class="fn">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> h.<span class="hub">HUB_CUSTOMER_HK</span>, demo.<span class="str">LOAD_DATE</span>)
+                                            <span class="kw">AS</span> CUSTOMER_DIM_SK,
+    h.CUSTOMER_BK,
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+
+    demo.FIRST_NAME, demo.LAST_NAME,
+    demo.EMAIL, demo.COUNTRY_CODE,
+
+    <span class="cm">-- Effective date range: SAT LOAD_DATE becomes effective-from</span>
+    demo.<span class="str">LOAD_DATE</span>                         <span class="kw">AS</span> EFF_FROM_DATE,
+    <span class="fn">COALESCE</span>(demo.<span class="str">LOAD_END_DATE</span>,
+             <span class="str">'9999-12-31'</span>::TIMESTAMP)    <span class="kw">AS</span> EFF_TO_DATE,
+
+    <span class="cm">-- Current-row flag (SCD2 standard)</span>
+    <span class="kw">CASE WHEN</span> demo.<span class="str">LOAD_END_DATE</span> <span class="kw">IS NULL</span>
+         <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>            <span class="kw">AS</span> IS_CURRENT_ROW
+
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> demo
+    <span class="kw">ON</span> demo.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>;
+<span class="cm">-- Note: LOAD_END_DATE must be populated for this pattern to work correctly.
+-- If using PIT-only approach (no LOAD_END_DATE), compute EFF_TO via LEAD().</span></pre>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>The critical DV advantage:</strong> with a traditional DW, choosing SCD Type 1 means you lose history forever. With Data Vault, the satellite stores all history regardless. You can add a SCD Type 2 dimension mart <em>years later</em> and backfill it with complete historical data from the satellite. The vault never forgets &mdash; the mart decides how much history to expose.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: DATA PRODUCT DESIGN
+       ============================================================ -->
+  <article class="concept" data-topic="data-product" id="data-product">
+    <p class="concept-num">Concept 05</p>
+    <h2>Data Product Design</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        A Data Product treats a dataset like a software product &mdash; it has an <strong>owner</strong>, a <strong>documented interface</strong> (schema contract), <strong>SLAs</strong> (freshness, availability), and a <strong>versioning policy</strong>. Downstream teams can depend on it without worrying that it will change unexpectedly. Data Vault is the perfect foundation for Data Products because the raw vault decouples source system changes from the product interface.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>The Five Attributes of a Good Data Product</h3>
+      <ul>
+        <li><strong>Discoverable.</strong> Listed in a data catalog (Collibra, DataHub, dbt docs) with a plain-English description, owner contact, and sample queries.</li>
+        <li><strong>Addressable.</strong> Has a stable, versioned endpoint &mdash; a Snowflake share name, a BigQuery table with a release tag, or a dbt semantic model name that does not change between minor updates.</li>
+        <li><strong>Trustworthy.</strong> Has documented freshness SLA (&ldquo;updated daily by 07:00 UTC&rdquo;), row-count lineage checks, and a data quality score exposed in the catalog.</li>
+        <li><strong>Self-describing.</strong> Column-level descriptions in the schema, tagged with sensitivity labels (PII, GDPR, financial). No consumer should need to ask the owner what CREDIT_LIMIT_USD means.</li>
+        <li><strong>Interoperable.</strong> Follows organisation-wide naming conventions and uses common domain keys (CUSTOMER_BK, PRODUCT_BK) that join cleanly across products from different domains.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">YAML &mdash; dbt Data Product Schema Contract (schema.yml)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm"># dbt schema.yml: Data Product contract for WIDE_CUSTOMER</span>
+models:
+  - name: wide_customer
+    description: <span class="str">|
+      Current-snapshot customer data product. All attributes as-of today's date.
+      Owner: Customer Domain Team | SLA: refreshed daily by 06:00 UTC
+      Version: 2.1.0 | Breaking changes require 30-day notice period</span>
+    meta:
+      owner: customer-domain@company.com
+      freshness_sla: <span class="str">"06:00 UTC daily"</span>
+      data_product_version: <span class="str">"2.1.0"</span>
+    columns:
+      - name: customer_bk
+        description: <span class="str">"Natural business key from CRM. Stable identifier."</span>
+        tests: [not_null, unique]
+      - name: email
+        description: <span class="str">"Primary contact email. PII — masked in non-prod environments."</span>
+        meta:
+          sensitivity: PII
+          gdpr_category: contact_data
+      - name: credit_limit
+        description: <span class="str">"Approved credit limit in USD. From ERP financials satellite."</span>
+        tests: [not_null, { dbt_utils.accepted_range: { min_value: 0 } }]</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Versioning discipline:</strong> use semantic versioning for Data Products (MAJOR.MINOR.PATCH). Adding a column is MINOR (backward-compatible). Renaming or removing a column is MAJOR (breaking). Alert all consumers of a MAJOR change with a 30-day deprecation window. Store each major version as a separate schema or view alias (<code>WIDE_CUSTOMER_V1</code>, <code>WIDE_CUSTOMER_V2</code>) until the prior version is sunset.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A: DV to Dimensional Modeling</h2>
+
+    <p class="interview-section-label">Architect-Level Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Should Information Marts query the Raw Vault directly or always go through the Business Vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Always through the Business Vault (PIT and Bridge tables).</strong> Never directly from the Raw Vault.</p>
+          <p>Three reasons:</p>
+          <p><strong>(1) Performance.</strong> Direct satellite queries require a MAX(LOAD_DATE) subquery or LOAD_END_DATE filter per entity to find the current record. With millions of entities and hundreds of satellite rows per entity, this is enormously expensive without pre-computation. PIT tables pre-compute the exact LOAD_DATE for each satellite at each snapshot date, reducing mart joins to equality lookups instead of range scans.</p>
+          <p><strong>(2) Consistency.</strong> If two mart queries both need &ldquo;the current customer record,&rdquo; they should produce the same result regardless of the millisecond they run. A PIT table with a defined snapshot date granularity ensures all mart queries reference the same LOAD_DATE for the same snapshot &mdash; without PIT, concurrent queries hitting a live satellite can see different &ldquo;current&rdquo; records if a load is in progress.</p>
+          <p><strong>(3) Separation of concerns.</strong> The Raw Vault is a persistence layer; the Business Vault is the query layer. Mart queries that bypass this boundary couple report logic to physical vault structure, making vault refactoring (e.g., splitting a satellite, renaming a column) break mart code. PIT and Bridge tables act as a stable interface between the vault and consumers.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does Data Vault enable you to produce SCD Type 2 dimensions retroactively?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Because the Raw Vault Satellite is insert-only and stores every version of every attribute with a LOAD_DATE timestamp, <strong>the complete SCD2 history already exists in the satellite</strong> from day one &mdash; you simply haven&rsquo;t materialised it as a mart dimension yet.</p>
+          <p>In a traditional DW, if you loaded a Type 1 (overwrite) customer dimension for 3 years and then decide to switch to Type 2, you have <em>no historical data</em> to build the Type 2 history from &mdash; it was overwritten.</p>
+          <p>With DV, your satellite may have 50 rows per customer spanning 3 years. To build a SCD2 dimension: project all satellite rows, set EFF_FROM = LOAD_DATE, set EFF_TO = the next row&rsquo;s LOAD_DATE (or NULL for the current row), assign surrogate keys. You get the complete 3-year SCD2 history immediately, without re-extracting anything from the source.</p>
+          <p>This is the architectural proof that Data Vault decouples the storage decision (keep all history) from the presentation decision (which SCD type to show consumers). You decide the SCD type at mart build time, not at vault design time.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is a Data Product and how does it differ from an Information Mart?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>An Information Mart is a technical artefact: a schema, a set of tables and views designed for BI or analytical queries. It may or may not have formal SLAs, ownership, or versioning.</p>
+          <p>A Data Product is a <strong>governed, versioned, SLA-backed, discoverable dataset</strong> with an owner who treats it like a product team treats a software API. It has:</p>
+          <p><strong>(1) A schema contract.</strong> Column names, types, and semantics are documented and versioned. Breaking changes require a deprecation process.</p>
+          <p><strong>(2) Freshness and availability SLAs.</strong> Consumers can depend on it being updated by a specific time each day with a defined error budget.</p>
+          <p><strong>(3) Data quality metrics.</strong> Row counts, null rates, referential integrity scores are monitored and exposed in a catalog. Consumers know the data quality level before querying.</p>
+          <p><strong>(4) Access control.</strong> Sensitive columns (PII, financial) are masked or access-controlled by consumer tier. The product owner manages access grants, not a central DBA.</p>
+          <p>In practice, a Data Product is often built <em>on top of</em> an Information Mart &mdash; the mart provides the physical query layer, and the Data Product layer adds governance, discoverability, and the consumer-facing contract.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 12 Key Takeaways</h3>
+      <ul>
+        <li>Information Marts are the business-facing query layer. They always read through the Business Vault (PIT and Bridge tables) &mdash; never directly from the Raw Vault. PIT tables pre-compute the satellite LOAD_DATE for each snapshot, turning complex range queries into equality lookups.</li>
+        <li>Links map to Fact tables; Hub + Satellite combinations map to Dimension tables. Star Schemas give BI tools optimised GROUP BY performance; Wide/OBT tables give self-service analysts and ML pipelines zero-join access.</li>
+        <li>Data Vault enables any SCD type from the same underlying satellite history. Choose the SCD type in the mart, not at vault design time. You can add SCD2 retroactively using years of pre-existing satellite history &mdash; something impossible with traditional overwrite-based ETL.</li>
+        <li>Data Products elevate Information Marts to governed, versioned, SLA-backed assets with documented schema contracts. Use semantic versioning, catalog documentation, and PII tagging. Breaking changes require consumer notification and a deprecation window.</li>
+        <li>The DV philosophy of separation of concerns means: Raw Vault stores everything, Business Vault enables queryability, Information Marts present domain-specific views, Data Products add governance. Each layer has a single responsibility.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module11.html">&#8592; Module 11: Cloud Data Vault</a>
+  <a href="module13.html" class="next">Module 13: Enterprise Cases &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 12 of 14 &mdash; DV to Dimensional Modeling
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('12', 6);</script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Cloud Data Vault — Snowflake, BigQuery, Databricks Delta Lake patterns, cloud cost optimisation, streaming vault, and architect-level interview prep for Data Vault 2.0.">
+<title>Module 11: Cloud Data Vault | DV2 Mastery</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="reading-progress"><div class="reading-progress-bar"></div></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">DV<span class="nav-logo-badge">2.0</span>Mastery</a>
+  <div class="nav-links">
+    <a href="module01.html">Intro</a>
+    <a href="module02.html">Modeling</a>
+    <a href="module03.html">Hubs</a>
+    <a href="module04.html">Links</a>
+    <a href="module05.html">Satellites</a>
+    <a href="module06.html">Raw Vault</a>
+    <a href="module07.html">Biz Vault</a>
+    <a href="module08.html">Performance</a>
+    <a href="module09.html">Advanced</a>
+    <a href="module10.html">Automation</a>
+    <a href="module11.html" class="active">Cloud</a>
+    <a href="module12.html">Dimensional</a>
+    <a href="module13.html">Cases</a>
+    <a href="module14.html">Interview</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search topics&hellip;" aria-label="Search topics">
+    </div>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</nav>
+<div id="search-dropdown" class="search-dropdown" role="listbox"></div>
+
+<!-- MODULE HERO -->
+<header class="mod-hero">
+  <div class="mod-hero-grid"></div>
+  <div class="mod-hero-ghost">11</div>
+  <div class="mod-hero-inner">
+    <span class="mod-tag" style="color:var(--purple);border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.08)">
+      Architect &nbsp;&middot;&nbsp; Module 11 of 14
+    </span>
+    <h1>Cloud<br><em style="color:var(--purple)">Data Vault</em></h1>
+    <p class="mod-hero-desc">
+      Cloud platforms have fundamentally changed how Data Vault is deployed. Infinite compute elasticity, columnar storage, and native streaming services make cloud-native DV patterns possible that were impractical on-premises &mdash; but each platform has specific idioms you must master.
+    </p>
+    <div class="mod-meta">
+      <div class="mod-meta-item"><strong>6 Concepts</strong>Core topics</div>
+      <div class="mod-meta-item"><strong>~65 min</strong>Reading time</div>
+      <div class="mod-meta-item"><strong>Architect</strong>Level</div>
+      <div class="mod-meta-item"><strong>Modules 01&ndash;10</strong>Prerequisites</div>
+    </div>
+    <div class="mod-progress">
+      <div class="mod-progress-row">
+        <span class="mod-progress-label">Module Progress</span>
+        <span class="mod-progress-pct">0%</span>
+      </div>
+      <div class="mod-progress-track"><div class="mod-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ============================================================
+       CONCEPT 1: CLOUD DV ARCHITECTURE OVERVIEW
+       ============================================================ -->
+  <article class="concept" data-topic="cloud-dv-overview" id="cloud-dv-overview">
+    <p class="concept-num">Concept 01</p>
+    <h2>Cloud DV Architecture Overview</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        On-premises Data Vault ran on fixed hardware &mdash; you bought servers and they were always there, always running. In the cloud, compute is <strong>rented by the second</strong>. This changes everything: you can spin up 100 parallel loaders for a few minutes and pay almost nothing, then shut them down. Cloud DV takes advantage of this elasticity to load faster and cost less than any on-premises equivalent.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>How Cloud Changes the DV Architecture</h3>
+      <ul>
+        <li><strong>Compute is elastic.</strong> Spinning up 50 parallel Satellite loads for 3 minutes costs the same as running 5 loaders for 30 minutes &mdash; or less. Architect for maximum parallelism; cloud billing rewards it.</li>
+        <li><strong>Storage is cheap and separate from compute.</strong> In Snowflake, BigQuery, and Databricks, you pay for storage at blob-storage rates (pennies per GB/month) and for compute separately. This makes the insert-only, retention-forever DV pattern <strong>economically viable</strong> in a way it never was on-premises SAN storage.</li>
+        <li><strong>Native semi-structured support.</strong> VARIANT (Snowflake), JSON (BigQuery), and struct columns (Delta/Spark) allow you to store raw source payloads alongside structured columns, enabling a <em>schema-on-read</em> Raw Vault variant for unstructured sources.</li>
+        <li><strong>Zero-copy cloning.</strong> Snowflake and BigQuery allow you to clone an entire vault environment (dev/prod) in seconds with no data duplication cost. This makes dev/test/prod environment management trivial for DV teams.</li>
+      </ul>
+    </div>
+
+    <!-- SVG: Cloud DV architecture -->
+    <div class="diagram">
+      <svg viewBox="0 0 720 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Cloud Data Vault: object storage landing, cloud warehouse raw vault, business vault, mart layer">
+        <!-- Cloud landing zone -->
+        <rect x="10" y="50" width="130" height="100" rx="8" fill="rgba(34,211,200,0.06)" stroke="rgba(34,211,200,0.3)" stroke-width="1.2"/>
+        <text x="75" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(34,211,200,0.5)" letter-spacing="1">CLOUD LANDING</text>
+        <text x="75" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8">S3 / GCS</text>
+        <text x="75" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#22d3c8">ADLS Gen2</text>
+        <text x="75" y="116" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.4)">Parquet/JSON/CSV</text>
+        <text x="75" y="134" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(238,242,255,0.4)">Raw source files</text>
+
+        <!-- Arrows -->
+        <line x1="142" y1="100" x2="185" y2="100" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="183,95 196,100 183,105" fill="rgba(232,184,75,0.6)"/>
+
+        <!-- Raw Vault box -->
+        <rect x="197" y="30" width="160" height="140" rx="8" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.45)" stroke-width="2"/>
+        <text x="277" y="18" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.55)" letter-spacing="1">RAW VAULT SCHEMA</text>
+        <text x="277" y="60" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">HUB_* tables</text>
+        <text x="277" y="80" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">LINK_* tables</text>
+        <text x="277" y="100" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" font-weight="700" fill="#a78bfa">SAT_* tables</text>
+        <text x="277" y="128" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.45)">Columnar / clustered</text>
+        <text x="277" y="146" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.45)">Micro-partition pruning</text>
+        <text x="277" y="160" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(167,139,250,0.45)">Time-travel enabled</text>
+
+        <line x1="359" y1="100" x2="400" y2="100" stroke="rgba(134,239,172,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="398,95 411,100 398,105" fill="rgba(134,239,172,0.6)"/>
+
+        <!-- Business Vault -->
+        <rect x="412" y="50" width="140" height="100" rx="8" fill="rgba(134,239,172,0.06)" stroke="rgba(134,239,172,0.35)" stroke-width="1.5"/>
+        <text x="482" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(134,239,172,0.5)" letter-spacing="1">BUSINESS VAULT</text>
+        <text x="482" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">PIT tables</text>
+        <text x="482" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">Bridge tables</text>
+        <text x="482" y="116" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(134,239,172,0.8)">Computed SATs</text>
+        <text x="482" y="134" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(134,239,172,0.45)">Materialised views</text>
+
+        <line x1="554" y1="100" x2="594" y2="100" stroke="rgba(232,184,75,0.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="592,95 605,100 592,105" fill="rgba(232,184,75,0.6)"/>
+
+        <!-- Info Marts -->
+        <rect x="606" y="50" width="105" height="100" rx="8" fill="rgba(232,184,75,0.06)" stroke="rgba(232,184,75,0.35)" stroke-width="1.5"/>
+        <text x="658" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.5)" letter-spacing="1">INFO MARTS</text>
+        <text x="658" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">Star schemas</text>
+        <text x="658" y="98" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">Wide tables</text>
+        <text x="658" y="116" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="rgba(232,184,75,0.8)">Data Products</text>
+        <text x="658" y="134" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(232,184,75,0.45)">BI / ML serving</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Architect insight:</strong> In cloud DV, the biggest cost lever is <strong>compute time per load window</strong>, not storage. Reducing a 2-hour nightly batch to 15 minutes through parallelism and incremental materialisation cuts your warehouse cost by ~87% for that window. Design your pipelines to be as parallel as possible, and use scheduled materialisation windows (not always-on warehouses) for batch loads.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 2: SNOWFLAKE DATA VAULT PATTERNS
+       ============================================================ -->
+  <article class="concept" data-topic="snowflake-dv" id="snowflake-dv">
+    <p class="concept-num">Concept 02</p>
+    <h2>Snowflake Data Vault Patterns</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Snowflake is the most popular cloud platform for Data Vault because its automatic <strong>micro-partitioning</strong> aligns perfectly with DV&rsquo;s insert-only pattern. Every INSERT creates new micro-partitions; old partitions are never touched. Snowflake&rsquo;s <strong>Time Travel</strong> feature lets you query any table as it was at any point in the past &mdash; which is redundant for satellites (which have built-in history) but invaluable for debugging load failures.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Snowflake-specific Optimisations</h3>
+      <ul>
+        <li><strong>Cluster keys on SAT tables.</strong> Satellite tables grow large fast. Cluster on <code>(HUB_{ENTITY}_HK, LOAD_DATE)</code> to align micro-partitions with the most common query predicate (point-in-time lookup for a specific entity).</li>
+        <li><strong>VARIANT columns for semi-structured payloads.</strong> Satellites that receive JSON payloads from APIs can store them as VARIANT alongside or instead of flattened columns. Snowflake&rsquo;s columnar storage still prunes efficiently on the HK and LOAD_DATE cluster key.</li>
+        <li><strong>Dynamic Tables for Business Vault.</strong> Snowflake Dynamic Tables can replace materialised view + scheduled task patterns for PIT and Bridge tables. They incrementally refresh on a defined lag, eliminating manual scheduling.</li>
+        <li><strong>Zero-copy cloning for dev/test.</strong> <code>CREATE DATABASE DEV_VAULT CLONE PROD_VAULT</code> in seconds with no additional storage cost until the clone diverges from the original.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Snowflake: Satellite with Clustering &amp; Time Travel</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Satellite with Snowflake cluster key and data retention for Time Travel</span>
+<span class="kw">CREATE OR REPLACE TABLE</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> (
+    <span class="hub">HUB_CUSTOMER_HK</span>  <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_DATE</span>        <span class="typ">TIMESTAMP_NTZ</span><span class="kw">NOT NULL</span>,
+    <span class="str">LOAD_END_DATE</span>    <span class="typ">TIMESTAMP_NTZ</span><span class="kw">NULL</span>,
+    <span class="str">HASH_DIFF</span>        <span class="typ">CHAR(32)</span>     <span class="kw">NOT NULL</span>,
+    <span class="str">RECORD_SOURCE</span>    <span class="typ">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,
+    FIRST_NAME       <span class="typ">VARCHAR(200)</span>,
+    LAST_NAME        <span class="typ">VARCHAR(200)</span>,
+    DATE_OF_BIRTH    <span class="typ">DATE</span>,
+    COUNTRY_CODE     <span class="typ">CHAR(3)</span>,
+    <span class="kw">CONSTRAINT</span> pk_sat_cust_demo <span class="kw">PRIMARY KEY</span> (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="str">LOAD_DATE</span>)
+)
+<span class="cm">-- Cluster on HK + LOAD_DATE: aligns micro-partitions with PIT query pattern</span>
+CLUSTER BY (<span class="hub">HUB_CUSTOMER_HK</span>, <span class="fn">DATE_TRUNC</span>(<span class="str">'day'</span>, <span class="str">LOAD_DATE</span>))
+DATA_RETENTION_TIME_IN_DAYS = <span class="num">90</span>;  <span class="cm">-- Snowflake Time Travel window</span>
+
+<span class="cm">-- Query vault state as of yesterday (Time Travel for debugging)</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span>
+    AT (TIMESTAMP => <span class="fn">DATEADD</span>(<span class="str">'day'</span>, <span class="op">-</span><span class="num">1</span>, <span class="fn">CURRENT_TIMESTAMP</span>()))
+<span class="kw">WHERE</span> <span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> <span class="fn">MD5</span>(<span class="str">'CUST-10042'</span>);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; Snowflake Dynamic Table for PIT (Business Vault)</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Snowflake Dynamic Table: auto-refreshes PIT_CUSTOMER every 10 minutes</span>
+<span class="kw">CREATE OR REPLACE</span> DYNAMIC TABLE PIT_CUSTOMER
+    LAG = <span class="str">'10 minutes'</span>
+    WAREHOUSE = COMPUTE_WH
+    REFRESH_MODE = INCREMENTAL
+<span class="kw">AS</span>
+<span class="kw">WITH</span> snapshot_dates <span class="kw">AS</span> (
+    <span class="cm">-- Generate daily snapshot dates for the last 3 years</span>
+    <span class="kw">SELECT</span> DATEADD(<span class="str">'day'</span>, SEQ4(), <span class="str">'2022-01-01'</span>::DATE) <span class="kw">AS</span> SNAPSHOT_DATE
+    <span class="kw">FROM</span> TABLE(GENERATOR(ROWCOUNT => <span class="num">1100</span>))
+)
+<span class="kw">SELECT</span>
+    h.<span class="hub">HUB_CUSTOMER_HK</span>,
+    s.SNAPSHOT_DATE,
+    <span class="fn">MAX</span>(demo.<span class="str">LOAD_DATE</span>) <span class="kw">FILTER</span> (<span class="kw">WHERE</span> demo.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> s.SNAPSHOT_DATE)
+        <span class="kw">AS</span> SAT_DEMOGRAPHICS_LD,
+    <span class="fn">MAX</span>(cont.<span class="str">LOAD_DATE</span>) <span class="kw">FILTER</span> (<span class="kw">WHERE</span> cont.<span class="str">LOAD_DATE</span> <span class="op">&lt;=</span> s.SNAPSHOT_DATE)
+        <span class="kw">AS</span> SAT_CONTACT_LD
+<span class="kw">FROM</span> <span class="hub">HUB_CUSTOMER</span> h
+<span class="kw">CROSS JOIN</span> snapshot_dates s
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_DEMOGRAPHICS</span> demo <span class="kw">ON</span> demo.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">LEFT JOIN</span> <span class="sat">SAT_CUSTOMER_CONTACT</span>      cont <span class="kw">ON</span> cont.<span class="hub">HUB_CUSTOMER_HK</span> <span class="op">=</span> h.<span class="hub">HUB_CUSTOMER_HK</span>
+<span class="kw">GROUP BY</span> h.<span class="hub">HUB_CUSTOMER_HK</span>, s.SNAPSHOT_DATE;</pre>
+    </div>
+
+    <div class="tip">
+      <p><strong>Snowflake cost tip:</strong> Satellite INSERT loads are very cheap because they only write new micro-partitions. The expensive operation is querying large Satellites without a cluster key aligned to your predicate. Always check <code>SYSTEM$CLUSTERING_INFORMATION()</code> on large SAT tables and re-cluster if the depth exceeds 3.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 3: BIGQUERY DATA VAULT
+       ============================================================ -->
+  <article class="concept" data-topic="bigquery-dv" id="bigquery-dv">
+    <p class="concept-num">Concept 03</p>
+    <h2>BigQuery Data Vault</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        BigQuery is Google&rsquo;s fully serverless data warehouse. Unlike Snowflake, you don&rsquo;t manage virtual warehouses &mdash; queries just run. The billing model is per-byte-scanned, which makes partitioning and clustering <strong>essential for cost control</strong> in a Data Vault. Without them, every satellite query scans the entire table and you get a large invoice.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>BigQuery-specific DV Patterns</h3>
+      <ul>
+        <li><strong>Partition by LOAD_DATE.</strong> All Satellite tables should be partitioned by <code>DATE(LOAD_DATE)</code>. This enables partition pruning: a query asking for today&rsquo;s satellite records only scans today&rsquo;s partition, not years of history.</li>
+        <li><strong>Cluster by Hash Key.</strong> Within each partition, cluster on <code>HUB_{ENTITY}_HK</code>. Queries for a specific entity (the most common DV query) will scan only a small sorted block within the partition.</li>
+        <li><strong>MERGE statement for Hub loads.</strong> BigQuery&rsquo;s MERGE is efficient for the Hub idempotent insert pattern. On Satellite loads, prefer INSERT with a NOT EXISTS guard to avoid MERGE overhead on large tables.</li>
+        <li><strong>Materialised Views for PIT tables.</strong> BigQuery Materialised Views incrementally refresh on DML changes to their base tables &mdash; making them ideal for PIT and Bridge tables in the Business Vault.</li>
+        <li><strong>Authorised Views for data access control.</strong> Share raw vault data to downstream teams without granting access to underlying tables by creating authorised views per business domain.</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">SQL &mdash; BigQuery: Partitioned + Clustered Satellite</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- BigQuery: satellite partitioned by load date, clustered by hash key</span>
+<span class="kw">CREATE OR REPLACE TABLE</span> `project.raw_vault.SAT_CUSTOMER_DEMOGRAPHICS`
+(
+    HUB_CUSTOMER_HK  STRING        <span class="kw">NOT NULL</span>,
+    LOAD_DATE        TIMESTAMP     <span class="kw">NOT NULL</span>,
+    LOAD_END_DATE    TIMESTAMP,
+    HASH_DIFF        STRING        <span class="kw">NOT NULL</span>,
+    RECORD_SOURCE    STRING        <span class="kw">NOT NULL</span>,
+    FIRST_NAME       STRING,
+    LAST_NAME        STRING,
+    DATE_OF_BIRTH    DATE,
+    COUNTRY_CODE     STRING
+)
+PARTITION BY DATE(LOAD_DATE)            <span class="cm">-- prune by date on all time-range queries</span>
+CLUSTER BY HUB_CUSTOMER_HK             <span class="cm">-- fast lookup within partition by entity</span>
+OPTIONS (
+    require_partition_filter = FALSE,   <span class="cm">-- allow unfiltered queries (for FULL scans)</span>
+    partition_expiration_days = NULL    <span class="cm">-- never expire: Raw Vault is permanent</span>
+);
+
+<span class="cm">-- BigQuery MERGE for Hub load (idempotent)</span>
+MERGE `project.raw_vault.HUB_CUSTOMER` T
+USING (
+    <span class="kw">SELECT DISTINCT</span> HUB_CUSTOMER_HK, CUSTOMER_ID AS CUSTOMER_BK, LOAD_DATE, RECORD_SOURCE
+    <span class="kw">FROM</span> `project.staging.STG_CUSTOMER`
+) S
+ON T.HUB_CUSTOMER_HK = S.HUB_CUSTOMER_HK
+WHEN NOT MATCHED THEN
+    INSERT (HUB_CUSTOMER_HK, CUSTOMER_BK, LOAD_DATE, RECORD_SOURCE)
+    VALUES (S.HUB_CUSTOMER_HK, S.CUSTOMER_BK, S.LOAD_DATE, S.RECORD_SOURCE);</pre>
+    </div>
+
+    <div class="warn">
+      <span class="warn-icon">&#9888;</span>
+      <p>
+        <strong>BigQuery cost trap: avoid SELECT * on satellite tables.</strong> BigQuery charges per byte scanned. A Satellite with 20 columns and 10 years of history charged for every query is expensive. Always SELECT only the columns you need. For PIT-based point-in-time queries, join to the PIT table first to get the LOAD_DATE, then query only the specific satellite partition. The partition pruning brings costs down by 95%+ versus a full scan.
+      </p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 4: DATABRICKS & DELTA LAKE
+       ============================================================ -->
+  <article class="concept" data-topic="databricks-delta" id="databricks-delta">
+    <p class="concept-num">Concept 04</p>
+    <h2>Databricks &amp; Delta Lake</h2>
+
+    <div class="eli5">
+      <p class="eli5-label">&#129504; ELI5 &mdash; Explain Like I&rsquo;m Five</p>
+      <p>
+        Databricks runs on Apache Spark with Delta Lake &mdash; an open-source storage format that adds ACID transactions, schema evolution, and time travel to Parquet files on cloud object storage. For Data Vault, Delta Lake is powerful because its <strong>transaction log</strong> gives you full history of every write (just like DV&rsquo;s own audit trail), and <strong>Z-ordering</strong> replaces traditional clustering for fast lookups on Hash Keys.
+      </p>
+    </div>
+
+    <div class="detail">
+      <h3>Delta Lake DV Patterns</html>
+      <ul>
+        <li><strong>Z-order on Hub and Satellite tables.</strong> After loading, run <code>OPTIMIZE table ZORDER BY (HUB_CUSTOMER_HK)</code> to co-locate all rows for the same entity in the same files. Point-in-time queries for one entity go from full-file-scan to a few-file-scan.</li>
+        <li><strong>Delta Lake Time Travel.</strong> <code>SELECT * FROM sat_customer VERSION AS OF 42</code> or <code>TIMESTAMP AS OF '2024-01-01'</code> gives you the table state at any past transaction. This is DV&rsquo;s own history complemented by the storage layer&rsquo;s own history.</li>
+        <li><strong>Schema evolution.</strong> When a source adds a new column, Delta Lake&rsquo;s <code>MERGE SCHEMA</code> option on an INSERT can automatically add the new column to the target table &mdash; enabling agile Satellite extension without DDL migrations.</li>
+        <li><strong>Streaming with Delta Live Tables.</strong> DLT pipelines can continuously merge streaming CDC events into Hub, Link, and Satellite tables using the MERGE INTO pattern, enabling near-real-time vault loading (see Concept 06).</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div>
+        <span class="code-label">PySpark / SQL &mdash; Databricks: Hub Load with Delta MERGE</span>
+        <button class="copy-btn" aria-label="Copy code">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre><span class="cm">-- Databricks SQL: Hub load using Delta MERGE (idempotent)</span>
+MERGE INTO raw_vault.HUB_CUSTOMER target
+USING (
+    <span class="kw">SELECT DISTINCT</span>
+        HUB_CUSTOMER_HK,
+        CUSTOMER_ID <span class="kw">AS</span> CUSTOMER_BK,
+        LOAD_DATE,
+        RECORD_SOURCE
+    <span class="kw">FROM</span> staging.STG_CUSTOMER
+) source
+ON target.HUB_CUSTOMER_HK <span class="op">=</span> source.HUB_CUSTOMER_HK
+WHEN NOT MATCHED THEN
+    INSERT (HUB_CUSTOMER_HK, CUSTOMER_BK, LOAD_DATE, RECORD_SOURCE)
+    VALUES (source.HUB_CUSTOMER_HK, source.CUSTOMER_BK,
+            source.LOAD_DATE, source.RECORD_SOURCE);
+
+<span class="cm">-- After load: Z-order to optimise point-in-time queries</span>
+OPTIMIZE raw_vault.SAT_CUSTOMER_DEMOGRAPHICS
+    ZORDER BY (HUB_CUSTOMER_HK, LOAD_DATE);
+
+<span class="cm">-- Time travel: see satellite as of a specific version</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> raw_vault.SAT_CUSTOMER_DEMOGRAPHICS
+VERSION <span class="kw">AS OF</span> <span class="num">158</span>
+<span class="kw">WHERE</span> HUB_CUSTOMER_HK <span class="op">=</span> <span class="fn">MD5</span>(<span class="str">'CUST-10042'</span>);</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 5: CLOUD COST OPTIMISATION
+       ============================================================ -->
+  <article class="concept" data-topic="cloud-cost" id="cloud-cost">
+    <p class="concept-num">Concept 05</p>
+    <h2>Cloud Cost Optimisation</h2>
+
+    <div class="detail">
+      <h3>The Five Cost Levers in Cloud DV</h3>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Lever</th>
+          <th>Action</th>
+          <th>Typical Savings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Warehouse sizing</strong></td>
+          <td>Use XS warehouse for staging materialisation; scale up only for parallel vault loads</td>
+          <td>40&ndash;60% compute cost reduction</td>
+        </tr>
+        <tr>
+          <td><strong>Load window compression</strong></td>
+          <td>Maximise fan-out parallelism; 15-min window at 2x cost &lt; 60-min window at 1x cost</td>
+          <td>Depends on data volume</td>
+        </tr>
+        <tr>
+          <td><strong>Incremental satellite loads</strong></td>
+          <td>HashDiff comparison ensures only changed rows are inserted; unchanged rows never written</td>
+          <td>60&ndash;90% storage growth reduction vs full loads</td>
+        </tr>
+        <tr>
+          <td><strong>Cluster/partition alignment</strong></td>
+          <td>Cluster satellite tables by HK so PIT queries scan &lt;1% of data</td>
+          <td>90%+ scan reduction on BigQuery (direct billing impact)</td>
+        </tr>
+        <tr>
+          <td><strong>Information Mart refresh strategy</strong></td>
+          <td>Refresh mart tables only when underlying vault data changes; avoid time-based full rebuilds</td>
+          <td>50&ndash;80% mart compute cost reduction</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <span class="callout-icon">&#128161;</span>
+      <p><strong>Real-world pattern:</strong> a typical DV implementation with 50 satellite tables loading 10M rows/day can run its entire nightly load in under 20 minutes on a Snowflake M warehouse (auto-suspended when done) for approximately $15&ndash;40/day total compute cost. Without parallelism and cluster keys, the same load on an always-on XL warehouse costs 10&times; more and takes 3&times; longer.</p>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       CONCEPT 6: INTERVIEW Q&A — CLOUD DV
+       ============================================================ -->
+  <article class="concept" data-topic="interview-qa" id="interview-qa">
+    <p class="concept-num">Concept 06</p>
+    <h2>Interview Q&amp;A: Cloud Data Vault</h2>
+
+    <p class="interview-section-label">Architect-Level Questions</p>
+
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How does Snowflake&rsquo;s micro-partitioning align with Data Vault&rsquo;s insert-only design?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Snowflake automatically partitions data into 16&ndash;512 MB compressed micro-partitions as rows are inserted. Because Data Vault tables are insert-only, every batch of inserts appends new micro-partitions without modifying existing ones. This means:</p>
+          <p><strong>(1) No write amplification.</strong> Traditional row-store databases rewrite pages when rows are updated. DV on Snowflake never touches existing micro-partitions &mdash; a perfect alignment of design philosophies.</p>
+          <p><strong>(2) Natural time-range partition pruning.</strong> Satellite INSERTs cluster naturally by LOAD_DATE (recent inserts = recent partitions). A query filtering on LOAD_DATE &gt; &lsquo;2024-01-01&rsquo; prunes all older micro-partitions automatically.</p>
+          <p><strong>(3) Explicit clustering for HK lookups.</strong> The natural insertion order is by time, not by entity. Point-in-time queries that filter on HUB_CUSTOMER_HK must scan all micro-partitions without a cluster key. Defining a cluster key on (HUB_CUSTOMER_HK, DATE_TRUNC(&lsquo;day&rsquo;, LOAD_DATE)) reorganises micro-partitions to co-locate rows for the same entity, enabling 90%+ partition pruning on entity-centric queries.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          Why is BigQuery&rsquo;s per-byte billing model a significant concern for Data Vault, and how do you mitigate it?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Data Vault Satellite tables grow unboundedly by design &mdash; every change to every attribute produces a new row, forever. Without mitigation, a 5-year-old satellite with 500M rows would scan all 500M rows for every point-in-time query, regardless of the answer set size, costing $2.50+ per query at standard BigQuery pricing.</p>
+          <p>Mitigation strategies:</p>
+          <p><strong>(1) Partition by DATE(LOAD_DATE).</strong> Partition pruning limits scans to relevant date ranges. A query for &ldquo;current record&rdquo; with LOAD_END_DATE IS NULL only scans the most recent partition (assuming LOAD_END_DATE is populated) or all partitions (if not). Populate LOAD_END_DATE or use a PIT table that pre-computes the latest LOAD_DATE per entity.</p>
+          <p><strong>(2) Cluster by HUB_ENTITY_HK within each partition.</strong> Sorted blocks within each partition enable BigQuery to skip most blocks for single-entity lookups.</p>
+          <p><strong>(3) Use PIT tables as query entry points.</strong> Route all mart queries through the PIT table, which pre-computes the relevant LOAD_DATE per entity per snapshot. The downstream satellite JOIN then hits a specific LOAD_DATE predicate, enabling full partition pruning.</p>
+          <p><strong>(4) Use Materialised Views for Business Vault.</strong> BigQuery MVs cache query results and charge only for the incremental refresh, not a full recompute. Business Vault PIT and Bridge tables as MVs reduce mart query compute costs significantly.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          What is the architectural difference between batch and streaming Data Vault loading?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p><strong>Batch loading:</strong> data is extracted from the source in discrete batches (hourly, daily), staged, and loaded into the vault. LOAD_DATE is a constant per batch. All rows in a batch share the same technical timestamp. This is the canonical DV loading pattern and supports full parallelism.</p>
+          <p><strong>Streaming loading:</strong> CDC events (INSERT/UPDATE/DELETE from a transaction log like Debezium, Kafka, or Kinesis) are consumed continuously and loaded into the vault with near-real-time latency. Each event carries its own event timestamp. The vault loading logic must handle out-of-order events, duplicate delivery, and exactly-once semantics.</p>
+          <p>Key differences:</p>
+          <p><strong>(1) LOAD_DATE.</strong> In batch, LOAD_DATE is the batch start time &mdash; a single constant. In streaming, LOAD_DATE is the event processing time or the source commit timestamp. The choice determines the semantics of &ldquo;as of&rdquo; queries.</p>
+          <p><strong>(2) Idempotency.</strong> Batch loads are naturally idempotent (re-running inserts nothing new via HashDiff check). Streaming loads must implement exactly-once delivery guards (e.g., deduplication by event ID + commit LSN) to prevent duplicate satellite rows.</p>
+          <p><strong>(3) Throughput vs latency trade-off.</strong> Batch maximises throughput via bulk parallel inserts. Streaming minimises latency but introduces per-event overhead. Many architectures use streaming for critical low-latency sources (financial transactions) and batch for bulk loads (overnight CRM extracts).</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header">
+          How would you design a cloud DV to support both batch and streaming sources in the same vault?
+          <span class="acc-chevron">&#9654;</span>
+        </div>
+        <div class="acc-body">
+          <p>Use a <strong>unified Raw Vault</strong> with source-specific RECORD_SOURCE values and satellite splitting by source:</p>
+          <p><strong>(1) The same Hub table serves both batch and streaming sources.</strong> A Hub row for CUSTOMER_ID=10042 is inserted once regardless of whether it first arrives via batch or streaming. Hash keys are identical because the computation is deterministic.</p>
+          <p><strong>(2) Separate Satellites per source and loading pattern.</strong> <code>SAT_CUSTOMER_DEMOGRAPHICS_BATCH</code> (loaded from nightly CRM extract) and <code>SAT_CUSTOMER_EVENTS_STREAM</code> (loaded from real-time Kafka events) are separate tables. They share the same Hub FK but track different attribute sets at different velocities.</p>
+          <p><strong>(3) PIT tables in the Business Vault unify the timeline.</strong> A PIT table joins across both batch-loaded and stream-loaded satellites at a common snapshot date, giving downstream marts a single coherent view regardless of how each satellite was populated.</p>
+          <p><strong>(4) Handle LOAD_DATE semantics consistently.</strong> Agree on a convention: LOAD_DATE for batch = batch processing start time; LOAD_DATE for streaming = event consumption time (not source commit time, unless bi-temporal). Document this choice in your data catalog, as it determines how &ldquo;as-of&rdquo; queries behave across the two satellite types.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="summary">
+      <h3>&#9989; Module 11 Key Takeaways</h3>
+      <ul>
+        <li>Cloud platforms make DV economically viable at scale: compute is elastic, storage is cheap, and parallelism is free. Design your load pipelines for maximum concurrency to minimise the compute window and cost.</li>
+        <li>Snowflake DV: use cluster keys on <code>(HUB_ENTITY_HK, DATE_TRUNC(&lsquo;day&rsquo;, LOAD_DATE))</code> for satellite tables. Use Dynamic Tables for Business Vault PIT refresh. Zero-copy clone for dev/test environments.</li>
+        <li>BigQuery DV: partition all satellite tables by <code>DATE(LOAD_DATE)</code> and cluster by HK. Route mart queries through PIT tables to enable partition pruning. Use Materialised Views for Business Vault to reduce incremental refresh costs.</li>
+        <li>Databricks Delta Lake: Z-order satellite tables by HK after each load batch. Use Delta MERGE for idempotent Hub loading. Schema evolution with MERGE SCHEMA eliminates DDL migrations when sources add columns.</li>
+        <li>Streaming and batch loading can coexist in the same Raw Vault: same Hubs, separate source-specific Satellites. PIT tables in the Business Vault unify both timelines for downstream marts.</li>
+      </ul>
+    </div>
+  </article>
+
+</main>
+
+<!-- PAGE NAV -->
+<nav class="page-nav" aria-label="Module navigation">
+  <a href="module10.html">&#8592; Module 10: Automation</a>
+  <a href="module12.html" class="next">Module 12: Dimensional Modeling &#8594;</a>
+</nav>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Data Vault 2.0 Mastery</strong> &mdash; Module 11 of 14 &mdash; Cloud Data Vault
+</footer>
+
+<script>window.__dvIsModule = true;</script>
+<script src="../assets/js/app.js"></script>
+<script>window.__dvPageInited = true; initPage('11', 6);</script>
+</body>
+</html>
